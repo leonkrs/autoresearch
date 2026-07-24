@@ -1,6 +1,7 @@
 //! Scaena CLI. Thin shell over scaena-core. Same capabilities the MCP server and GUI will expose.
 
 use scaena_core::flow::{parse_flow, restore, run_flow, snapshot};
+use scaena_core::render::{export_store, frame_png, preset};
 use scaena_core::{adb_path, all_devices, capture, png_dimensions, Device, VERSION};
 use std::path::{Path, PathBuf};
 
@@ -12,6 +13,8 @@ fn main() {
         Some("flow") => cmd_flow(&args[1..]),
         Some("snapshot") => cmd_snapshot(&args[1..]),
         Some("restore") => cmd_restore(&args[1..]),
+        Some("frame") => cmd_frame(&args[1..]),
+        Some("export") => cmd_export(&args[1..]),
         Some("version") | Some("--version") | Some("-V") => println!("scaena {VERSION}"),
         _ => {
             eprintln!("scaena {VERSION}");
@@ -93,6 +96,57 @@ fn cmd_flow(args: &[String]) {
     }
 }
 
+fn cmd_frame(args: &[String]) {
+    let Some(src) = args.first().filter(|a| !a.starts_with("--")) else {
+        eprintln!("usage: scaena frame <png> [--out F] [--pad N] [--radius N]"); std::process::exit(2);
+    };
+    let pad: u32 = flag(args, "--pad").and_then(|s| s.parse().ok()).unwrap_or(64);
+    let radius: u32 = flag(args, "--radius").and_then(|s| s.parse().ok()).unwrap_or(48);
+    let out = flag(args, "--out").unwrap_or_else(|| format!("{src}.framed.png"));
+    let bytes = match std::fs::read(src) {
+        Ok(b) => b,
+        Err(e) => { eprintln!("read {src}: {e}"); std::process::exit(1); }
+    };
+    match frame_png(&bytes, pad, [14, 13, 16, 255], radius) {
+        Ok(png) => {
+            let _ = std::fs::write(&out, &png);
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            println!("framed -> {out} ({w}x{h})");
+        }
+        Err(e) => { eprintln!("frame failed: {e}"); std::process::exit(1); }
+    }
+}
+
+fn cmd_export(args: &[String]) {
+    let name = flag(args, "--store").unwrap_or_else(|| "play".into());
+    let out_dir = PathBuf::from(flag(args, "--out").unwrap_or_else(|| "scaena-store".into()));
+    let Some(p) = preset(&name) else {
+        eprintln!("unknown store '{name}' (try: play, appstore)"); std::process::exit(2);
+    };
+    let srcs = positionals(args);
+    if srcs.is_empty() {
+        eprintln!("usage: scaena export <png...> [--store play|appstore] [--out DIR]"); std::process::exit(2);
+    }
+    if let Err(e) = std::fs::create_dir_all(&out_dir) {
+        eprintln!("mkdir {}: {e}", out_dir.display()); std::process::exit(1);
+    }
+    let mut n = 0;
+    for src in srcs {
+        let bytes = match std::fs::read(src) { Ok(b) => b, Err(e) => { eprintln!("skip {src}: {e}"); continue; } };
+        match export_store(&bytes, &p) {
+            Ok((png, w, h)) => {
+                let stem = Path::new(src).file_stem().and_then(|s| s.to_str()).unwrap_or("shot");
+                let dest = out_dir.join(format!("{stem}.png"));
+                let _ = std::fs::write(&dest, &png);
+                println!("  {} -> {} ({w}x{h})", src, dest.display());
+                n += 1;
+            }
+            Err(e) => eprintln!("  {src}: {e}"),
+        }
+    }
+    println!("exported {n} screenshot(s) for {} into {}", p.name, out_dir.display());
+}
+
 fn pick_device(serial: Option<&str>) -> Option<Device> {
     let devices = all_devices();
     match serial {
@@ -146,4 +200,25 @@ fn cmd_capture(args: &[String]) {
 /// Value of `--name value` in args, if present.
 fn flag(args: &[String], name: &str) -> Option<String> {
     args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+}
+
+const VALUE_FLAGS: &[&str] = &["--out", "--store", "--pad", "--radius", "--device"];
+
+/// Positional args, excluding flags AND the values that follow value-taking flags. Without this, a
+/// `--out DIR` value was mistaken for a positional input (it tried to read the output dir as a source).
+fn positionals(args: &[String]) -> Vec<&String> {
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < args.len() {
+        let a = &args[i];
+        if a.starts_with("--") {
+            if VALUE_FLAGS.contains(&a.as_str()) {
+                i += 1; // skip its value
+            }
+        } else {
+            out.push(a);
+        }
+        i += 1;
+    }
+    out
 }

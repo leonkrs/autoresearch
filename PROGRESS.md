@@ -56,3 +56,12 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Proof: piped a full MCP session -> initialize, tools/list (6 tools), `capture` -> "1080x2400 from
   emulator-5554" + image/png content (133KB b64). `claude mcp add scaena` -> **list shows ✔ Connected**.
 - **G4 passed.** Next: G5 (framing + store export).
+
+## Cycle 6 — framing + store export (G5) · gates 4/6
+- `render.rs` (image crate, PNG-only): `frame_png` (padded bg + rounded-corner screenshot) +
+  `export_store` (Play/App-Store dimension compliance, downscale oversize). CLI `frame` + `export`.
+- Proof (real screen): capture 1080x2400 -> frame 1200x2520 (pad 60, rounded) -> export play-compliant.
+  `cargo test` = 10 passed (framing grows by pad; export downscales 8000px; compliant passes through).
+- Loop caught a real bug: `--out`'s value was mistaken for a positional input -> added `positionals()`
+  that skips value-flag args. Re-verified clean.
+- **G5 passed.** Next: G6 (browser GUI via `scaena serve` + offline end-to-end).
