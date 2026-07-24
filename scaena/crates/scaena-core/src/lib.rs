@@ -2,6 +2,8 @@
 //! Zero AI, zero keys, zero network. Everything here shells out to local tools (adb, xcrun simctl) or
 //! touches the local filesystem only. Two device backends behind one abstraction: Android + iOS sim.
 
+use std::io;
+use std::path::Path;
 use std::process::Command;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -135,6 +137,47 @@ pub fn all_devices() -> Vec<Device> {
     v
 }
 
+// ---------------- capture ----------------
+
+/// Capture a device/simulator screen to `out` as PNG. Android via `adb exec-out screencap -p`
+/// (binary-safe, no host shell redirection). iOS via `xcrun simctl io <udid> screenshot`.
+/// Zero network. Returns the PNG bytes written, for immediate validation.
+pub fn capture(device: &Device, adb: &str, out: &Path) -> io::Result<Vec<u8>> {
+    match device.platform {
+        Platform::Android => {
+            let output = Command::new(adb)
+                .args(["-s", &device.serial, "exec-out", "screencap", "-p"])
+                .output()?;
+            if !output.status.success() || output.stdout.is_empty() {
+                return Err(io::Error::other("adb screencap produced no data"));
+            }
+            std::fs::write(out, &output.stdout)?;
+            Ok(output.stdout)
+        }
+        Platform::Ios => {
+            let status = Command::new("xcrun")
+                .args(["simctl", "io", &device.serial, "screenshot", &out.to_string_lossy()])
+                .status()?;
+            if !status.success() {
+                return Err(io::Error::other("simctl screenshot failed"));
+            }
+            std::fs::read(out)
+        }
+    }
+}
+
+/// Read (width, height) from a PNG's IHDR without any image crate. None if the bytes are not a PNG.
+/// Used to prove a capture is a real, non-empty image.
+pub fn png_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
+    const SIG: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+    if bytes.len() < 24 || bytes[..8] != SIG || &bytes[12..16] != b"IHDR" {
+        return None;
+    }
+    let w = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+    let h = u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
+    Some((w, h))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,5 +219,17 @@ mod tests {
         assert!(parse_simctl_line("== Devices ==").is_none());
         assert!(parse_simctl_line("-- iOS 17.5 --").is_none());
         assert!(parse_simctl_line("    Unavailable: com.apple.CoreSimulator").is_none());
+    }
+
+    #[test]
+    fn png_dimensions_from_ihdr() {
+        // Minimal PNG signature + IHDR declaring 1080x2400.
+        let mut b = vec![137, 80, 78, 71, 13, 10, 26, 10];
+        b.extend_from_slice(&[0, 0, 0, 13]); // IHDR length
+        b.extend_from_slice(b"IHDR");
+        b.extend_from_slice(&1080u32.to_be_bytes());
+        b.extend_from_slice(&2400u32.to_be_bytes());
+        assert_eq!(png_dimensions(&b), Some((1080, 2400)));
+        assert_eq!(png_dimensions(b"not a png"), None);
     }
 }

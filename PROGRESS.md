@@ -17,3 +17,11 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - **Host gap (flagged):** `simctl` is not installed on this Mac (no Xcode simulator runtime), so LIVE
   iOS capture cannot be verified here. The iOS code path is unit-tested against sample simctl output;
   real iOS runs need a Mac with Xcode. Android live path proceeds.
+
+## Cycle 2 — device capture · gates 1/6 (G2 capture proven)
+- `scaena capture` (Android `adb exec-out screencap -p`, iOS `simctl io screenshot`) + a std-only
+  `png_dimensions` IHDR reader for proof. CLI `capture [--device S] [--out P]`.
+- Proof (live emulator murmur_pixel): `scaena devices` → `android emulator-5554 ready`; `scaena capture`
+  → **1080x2400 PNG, 1.37MB** (`file`: PNG RGBA). `cargo test` = 5 passed.
+- G1 now fully proven on Android (real device listed). G2: device-capture path proven; the host-screen
+  orange-dot scrub is a later slice (device screenshots carry no macOS dot). Next: G3 seeding + flows.

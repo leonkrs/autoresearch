@@ -1,3 +1,4 @@
 cycle	ts	slice	gate	gates_passed	kept	proof
 0	2026-07-24	scaffold workspace + CLI	G1	1	yes	cargo check ok; cargo test ok; scaena devices runs; version 0.1.0
 1	2026-07-24	iOS simctl backend + merged devices	G1	1	yes	4 unit tests pass (adb+simctl parsers); scaena devices merges both; simctl absent on host -> graceful
+2	2026-07-24	device capture (adb screencap)	G2	1	yes	scaena devices lists emulator-5554 ready; scaena capture -> real PNG 1080x2400 1.37MB (file: PNG RGBA); 5 unit tests. G2 capture proven, host orange-dot scrub still pending
