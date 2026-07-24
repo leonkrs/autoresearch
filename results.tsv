@@ -16,3 +16,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 14	2026-07-24	contact sheet (montage)	v1	5	yes	scaena contact tiles N screenshots into one grid PNG; unit test dims (2 cols x 3 -> 230x430); live 3-shot sheet produced
 15	2026-07-24	launcher + serve --open	v1	5	yes	Scaena.command double-click launcher; serve --open auto-opens the browser; verified serve --open binds + GET / -> 200
 16	2026-07-24	mock-render fallback (tokens + text)	v0.6	5	yes	scaena mock renders a Spocken-styled screen (amber header + spine-coloured cards + text via ab_glyph/system font); visually verified text renders; caught+fixed --header value leaking into card titles (4 cards->3)
+17	2026-07-24	mock tool in MCP (11 tools)	v0.6+	5	yes	MCP mock tool renders a branded screen from header+titles, returns image inline; verified over piped session (11 tools). Agents can render mocks when the app cant run

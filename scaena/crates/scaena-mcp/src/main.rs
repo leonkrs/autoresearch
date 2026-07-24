@@ -78,7 +78,9 @@ fn tools() -> Value {
         {"name":"export","description":"Make a screenshot store-dimension compliant (play|appstore). Returns the path.",
          "inputSchema": obj(json!({"src":{"type":"string"},"store":{"type":"string"},"out":{"type":"string"}}), json!(["src"]))},
         {"name":"tokens","description":"Import brand color tokens from a Theme.kt or CSS file. Returns JSON.",
-         "inputSchema": obj(json!({"file":{"type":"string"}}), json!(["file"]))}
+         "inputSchema": obj(json!({"file":{"type":"string"}}), json!(["file"]))},
+        {"name":"mock","description":"Render a branded mock app screen (header + card titles) when the app can't run. Returns the PNG.",
+         "inputSchema": obj(json!({"header":{"type":"string"},"titles":{"type":"array","items":{"type":"string"}},"out":{"type":"string"}}), json!(["titles"]))}
     ])
 }
 
@@ -185,6 +187,30 @@ fn call_tool(params: Option<&Value>) -> Result<Value, (i64, String)> {
             let text_src = std::fs::read_to_string(&file).map_err(|e| (-32000, e.to_string()))?;
             let toks = tokens::import(&text_src, &file);
             Ok(text(tokens::to_json(&toks)))
+        }
+        "mock" => {
+            let header = arg("header").unwrap_or_else(|| "Today".into());
+            let titles: Vec<String> = a.get("titles").and_then(Value::as_array)
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+                .unwrap_or_default();
+            if titles.is_empty() {
+                return Err((-32602, "titles must be a non-empty array".into()));
+            }
+            let accents = [[235u8, 169, 72], [255, 90, 110], [111, 168, 220], [127, 200, 169], [139, 124, 246]];
+            let cards: Vec<scaena_core::mock::Card> = titles.iter().enumerate()
+                .map(|(i, t)| scaena_core::mock::Card { title: t.clone(), accent: accents[i % accents.len()] })
+                .collect();
+            let font = scaena_core::mock::load_font(None).map_err(|e| (-32000, e))?;
+            let png = scaena_core::mock::render_mock(
+                &header, &cards, [14, 13, 16], [25, 23, 28, 255], [245, 243, 239], [235, 169, 72], &font,
+            ).map_err(|e| (-32000, e))?;
+            let out = arg("out").map(PathBuf::from).unwrap_or_else(|| std::env::temp_dir().join("scaena-mock.png"));
+            std::fs::write(&out, &png).map_err(|e| (-32000, e.to_string()))?;
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            Ok(json!({"content":[
+                {"type":"text","text": format!("mock {w}x{h} ({} cards) -> {}", cards.len(), out.display())},
+                {"type":"image","data": b64(&png), "mimeType":"image/png"}
+            ]}))
         }
         other => Err((-32601, format!("unknown tool: {other}"))),
     }

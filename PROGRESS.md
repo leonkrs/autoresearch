@@ -126,3 +126,7 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Proof: rendered a Spocken-styled 1080x2400 mock; **visually verified** amber header + spine-coloured
   cards + white titles render. Loop caught a real bug from the image (--header value leaked as a 4th
   card) -> added --header/--font/--cols/--port to VALUE_FLAGS. Re-verified 3 cards.
+
+## Cycle 17 — mock tool in MCP · gates 5/6
+- Added `mock` to `scaena-mcp` (now **11 tools**): agents render a branded screen from header+titles,
+  returned as an inline image. Proof: piped session -> mock -> "1080x2400 (2 cards)" + image content.
