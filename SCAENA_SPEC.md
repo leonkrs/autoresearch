@@ -22,14 +22,16 @@ badged bonus with graceful degradation.
 ## Acceptance gates (the metric = how many pass, 0..6)
 
 - **G1 — Core + CLI compile and run.** `cargo check` = 0 errors; `scaena devices` lists connected
-  Android devices (or "no devices") via adb. Proof: command output.
+  **Android devices (adb) AND iOS simulators (simctl)** behind one abstraction, or "no devices". Proof:
+  command output.
 - **G2 — Real capture + macOS orange-dot scrub.** `scaena capture` saves a real PNG of a booted
-  emulator screen; host-side captures get the orange screen-recording dot scrubbed. Proof: PNG on disk
-  + dimensions.
+  Android emulator (`adb exec-out screencap`) and an iOS simulator (`xcrun simctl io … screenshot`);
+  host-side captures get the orange screen-recording dot scrubbed. Proof: PNG on disk + dimensions.
 - **G3 — State seeding + declarative flows (the differentiator).** `scaena flow run <flow.yaml>` drives
-  an app to target screens via `seed_state` (app-private files / deep link / scripted input) and
-  captures each — **with no human authenticating**. Proof: the Spocken Auth + Home + Empty screens
-  captured behind its mandatory account gate.
+  an app to target screens via `seed_state` — Android (`run-as` app-private files / deep link / input)
+  and iOS (app-container filesystem write / `simctl openurl`) — and captures each, **with no human
+  authenticating**. Proof: the Spocken Auth + Home + Empty screens captured behind its mandatory
+  account gate.
 - **G4 — MCP server.** `scaena-mcp` speaks MCP over stdio, registers in Claude Code, and an agent call
   to `capture_screen` returns a real PNG from a running emulator. Proof: MCP tool-call result.
 - **G5 — Framing + store export.** `scaena frame` wraps screens in device frames (light/dark, bg,
@@ -56,10 +58,18 @@ badged bonus with graceful degradation.
 - Install-in-place: one canonical location, never duplicate. Canonical app path TBD (see open Q3).
 - Prefer std + thin, audited deps. Justify every dependency.
 
-## Open questions (STOP and ask the human — do not guess)
+## Decisions (locked 2026-07-24)
 
-1. Name **Scaena** final, or run `/nameit`?
-2. iOS (simctl) in v1, or Android-first?
-3. Canonical install path (`~/Desktop/mes applications/Scaena/`?).
-4. MCP server in Rust (`rmcp`) — accepted, or is a TS wrapper tolerated from the start?
-5. Personal tool, or packaged to sell (the 20-40k ceiling assumes distribution)?
+1. **Name: Scaena** (final).
+2. **Platform: Android + iOS in v1.** Two backends behind one device abstraction:
+   - Android via `adb` (`run-as` for app-private files, `am`/`monkey` input, deep links).
+   - iOS Simulator via `xcrun simctl` (screenshot, `openurl` deep links) plus **direct app-container
+     filesystem access** under `~/Library/Developer/CoreSimulator/Devices/<UDID>/data/...` for seeding
+     (no `run-as` equivalent needed; the sim's data lives on the host disk).
+   Physical iOS devices are out of scope (simulator only), matching the simulator-only capability here.
+3. **Install path:** app at `~/Desktop/mes applications/Scaena/`, source under
+   `~/Desktop/New Softwares/autoresearch` (branch `scaena`). Install-in-place, never duplicated.
+4. **MCP server: Rust `rmcp`, tried first.** Fall back to a TS wrapper only after an observed rmcp
+   failure.
+5. **Distribution: personal-first, kept sellable.** No store/licensing/onboarding scope gates v1;
+   code stays clean and documented enough to package later.
