@@ -156,3 +156,7 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   masked across the 3 test binaries. Root cause: `from_css` only split on `;`/newline, so the first
   `--var` in `:root{ ...` was dropped. Fix: also split on `{`/`}`.
 - Proof: full `cargo test` (checked for FAILED, not just grep) = **16 passed, 0 failed**. Re-verifying CI.
+
+## Cycle 23 — flow --frame · gates 5/6
+- `scaena flow --frame`: wrap each captured screen in a device frame in place (store-ready in one pass).
+- Proof: live `flow --frame` -> framed 1200x2520 capture; full test suite 16 passed, 0 failed.

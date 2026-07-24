@@ -104,17 +104,26 @@ fn cmd_flow(args: &[String]) {
         eprintln!("no ready device (try: scaena devices)");
         std::process::exit(1);
     };
+    let frame = args.iter().any(|a| a == "--frame");
     let base_dir = Path::new(file).parent().unwrap_or(Path::new("."));
     match run_flow(&adb_path(), &device, &steps, base_dir, &out_dir) {
         Ok(shots) => {
             println!("flow ok — {} capture(s) on {}:", shots.len(), device.serial);
-            for p in shots {
-                let dims = std::fs::read(&p)
+            for p in &shots {
+                // Optionally wrap each capture in a device frame, in place.
+                if frame {
+                    if let Ok(bytes) = std::fs::read(p) {
+                        if let Ok(png) = frame_png(&bytes, 60, [14, 13, 16, 255], 44) {
+                            let _ = std::fs::write(p, &png);
+                        }
+                    }
+                }
+                let dims = std::fs::read(p)
                     .ok()
                     .and_then(|b| png_dimensions(&b))
                     .map(|(w, h)| format!("{w}x{h}"))
                     .unwrap_or_else(|| "?".into());
-                println!("  {} ({})", p.display(), dims);
+                println!("  {} ({}{})", p.display(), dims, if frame { ", framed" } else { "" });
             }
         }
         Err(e) => { eprintln!("flow failed: {e}"); std::process::exit(1); }
