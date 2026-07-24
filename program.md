@@ -54,12 +54,20 @@ One cycle = one **thin vertical slice**:
   (Scaena's engine runs with zero AI, zero keys, zero network), **install-in-place** (one canonical
   location, never duplicate), project reports **only via `/cairn`**.
 
-## Stop and ask the human when
+## Never halt the loop (core rule of this framework)
 
-- A slice needs a **product decision** (the open questions in `SCAENA_SPEC.md`: iOS in v1?, MCP server
-  in Rust `rmcp` vs a TS wrapper?, personal vs packaged-for-sale). Surface it; **do not guess**.
-- A gate is blocked by something **only a human can do** (e.g. signing into a third-party account for a
-  real end-to-end test). Note it in `PROGRESS.md` and move to the next unblocked gate.
+The loop runs **autonomously**, like Karpathy's autoresearch. **Do NOT stop to ask the human between
+cycles.** Keep iterating: one verified slice, log, commit, next slice — continuously, until every gate
+passes or every remaining gate is human-blocked.
+
+- When a slice is **blocked by something only a human can do** (e.g. a one-time sign-in for a real
+  end-to-end capture): implement everything around it that CAN be built and tested, log the blocked bit
+  in `PROGRESS.md`, and **immediately move to the next unblocked gate**. Never let one blocked sub-slice
+  stall the whole loop.
+- When a slice needs a **product decision** the human has not made: pick the option the spec/defaults
+  already imply, log the assumption, and keep going. Only genuinely irreversible or expensive choices
+  warrant surfacing — and even then, keep building everything that does not depend on the answer.
+- Report only when all gates pass, or when the loop is fully blocked with nothing left to build.
 
 ## Definition of done
 

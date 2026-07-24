@@ -40,3 +40,11 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   **session-replay**: human signs in ONCE, `scaena snapshot` records the app-private state, `scaena
   seed --from <snapshot>` replays it forever. Scaena still never authenticates; it replays a
   human-provided snapshot. Then Home/Empty capture without any sign-in.
+
+## Cycle 4 — session-replay (snapshot/restore) · gates 2/6
+- `snapshot` (run-as `tar -c` via exec-out, binary-safe) + `restore` (run-as `tar -x`). CLI
+  `scaena snapshot <pkg>` / `scaena restore <pkg> <tar>`.
+- Proof (live): snapshot com.spocken.app -> 6144B tar; wiped `murmur_meta.json` (0 bytes); restored ->
+  **3 notes back**. Roundtrip works with zero authentication.
+- This closes the *mechanism* for the auth-gated screens: a human signs in ONCE, `scaena snapshot`
+  records it, `scaena restore` replays it forever. Loop continues to G4 (no human needed).

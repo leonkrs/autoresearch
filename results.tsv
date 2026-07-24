@@ -3,3 +3,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 1	2026-07-24	iOS simctl backend + merged devices	G1	1	yes	4 unit tests pass (adb+simctl parsers); scaena devices merges both; simctl absent on host -> graceful
 2	2026-07-24	device capture (adb screencap)	G2	1	yes	scaena devices lists emulator-5554 ready; scaena capture -> real PNG 1080x2400 1.37MB (file: PNG RGBA); 5 unit tests. G2 capture proven, host orange-dot scrub still pending
 3	2026-07-24	seed + flow runner	G3	2	yes	flow run drove Spocken, captured real Auth screen, seeded 3 notes via run-as WITHOUT sign-in (file proof); 7 unit tests; found+fixed adb-redirect and cold-start-timing bugs. Home/Empty need session-replay
+4	2026-07-24	snapshot/restore (session-replay)	G3	2	yes	snapshot com.spocken.app -> 6144B tar; wipe -> restore -> 3 notes back (roundtrip proven). Session-replay mechanism done; a SIGNED-IN snapshot still needs one human sign-in

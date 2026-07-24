@@ -41,6 +41,36 @@ pub fn seed_app_file(adb: &str, serial: &str, pkg: &str, rel: &str, host_src: &P
     adb_ok(adb, serial, &["shell", "run-as", pkg, "cp", tmp, &dest])
 }
 
+/// Snapshot an app's private `files/` dir to a host tar (via `run-as tar -c`, streamed through
+/// `exec-out` so it is binary-safe with no shell redirection). This is the basis of session-replay:
+/// a human signs in ONCE, we snapshot the resulting state, and `restore` replays it forever. Scaena
+/// itself never authenticates. Returns the tar byte length.
+pub fn snapshot(adb: &str, serial: &str, pkg: &str, out: &Path) -> io::Result<u64> {
+    let output = Command::new(adb)
+        .args(["-s", serial, "exec-out", "run-as", pkg, "tar", "-c", "files"])
+        .output()?;
+    if !output.status.success() || output.stdout.is_empty() {
+        return Err(io::Error::other(format!(
+            "snapshot failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
+    }
+    std::fs::write(out, &output.stdout)?;
+    Ok(output.stdout.len() as u64)
+}
+
+/// Restore a snapshot tar into an app's private dir (`run-as tar -x`, cwd = app data dir). Direct
+/// command, no redirection. Replays previously-captured state (including a signed-in session) with no
+/// authentication.
+pub fn restore(adb: &str, serial: &str, pkg: &str, tar: &Path) -> io::Result<()> {
+    if !tar.exists() {
+        return Err(io::Error::other(format!("snapshot not found: {}", tar.display())));
+    }
+    let tmp = "/data/local/tmp/scaena_snap.tar";
+    adb_ok(adb, serial, &["push", &tar.to_string_lossy(), tmp])?;
+    adb_ok(adb, serial, &["shell", "run-as", pkg, "tar", "-x", "-f", tmp])
+}
+
 pub fn launch(adb: &str, serial: &str, pkg: &str, activity: &str) -> io::Result<()> {
     adb_ok(adb, serial, &["shell", "am", "start", "-n", &format!("{pkg}/{activity}")])
 }
