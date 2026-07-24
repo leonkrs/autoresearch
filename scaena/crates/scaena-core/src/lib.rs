@@ -8,6 +8,7 @@ use std::process::Command;
 
 pub mod flow;
 pub mod render;
+pub mod tokens;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

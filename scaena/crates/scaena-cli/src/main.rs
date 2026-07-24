@@ -21,6 +21,7 @@ fn main() {
             let port: u16 = flag(&args, "--port").and_then(|s| s.parse().ok()).unwrap_or(7777);
             if let Err(e) = serve::run(port) { eprintln!("serve failed: {e}"); std::process::exit(1); }
         }
+        Some("tokens") => cmd_tokens(&args[1..]),
         Some("version") | Some("--version") | Some("-V") => println!("scaena {VERSION}"),
         _ => {
             eprintln!("scaena {VERSION}");
@@ -99,6 +100,24 @@ fn cmd_flow(args: &[String]) {
             }
         }
         Err(e) => { eprintln!("flow failed: {e}"); std::process::exit(1); }
+    }
+}
+
+fn cmd_tokens(args: &[String]) {
+    let Some(file) = positionals(args).first().copied() else {
+        eprintln!("usage: scaena tokens <Theme.kt | styles.css> [--out json]"); std::process::exit(2);
+    };
+    let text = match std::fs::read_to_string(file) {
+        Ok(t) => t,
+        Err(e) => { eprintln!("read {file}: {e}"); std::process::exit(1); }
+    };
+    let toks = scaena_core::tokens::import(&text, file);
+    let json = scaena_core::tokens::to_json(&toks);
+    if let Some(out) = flag(args, "--out") {
+        let _ = std::fs::write(&out, &json);
+        println!("{} tokens -> {out}", toks.len());
+    } else {
+        println!("{json}");
     }
 }
 

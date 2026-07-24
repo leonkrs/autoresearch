@@ -80,3 +80,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   orange pixels in top strip -> dark). CLI `scaena capture --host`.
 - Proof: live host PNG produced + scrubbed; unit test scrubs orange in the strip only (leaves orange
   below untouched). `cargo test` green. G2 (capture + macOS orange-dot scrub) now fully closed.
+
+## Cycle 9 — token import · gates 5/6 (v0.6 feature)
+- `tokens.rs`: parse Compose `Color(0xAARRGGBB)` and CSS `--name:#hex` -> {name,hex} JSON (std only).
+- Proof: `scaena tokens` on Spocken real `Theme.kt` -> Amber #EBA948, Ink #0E0D10, Violet, RecordRed,
+  Sky. Unit tests: kotlin alpha-drop, css vars. Feeds mock-render + brand-colored framing.
