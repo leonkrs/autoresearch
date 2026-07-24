@@ -1,0 +1,2 @@
+cycle	ts	slice	gate	gates_passed	kept	proof
+0	2026-07-24	scaffold workspace + CLI	G1	1	yes	cargo check ok; cargo test ok; scaena devices runs; version 0.1.0
