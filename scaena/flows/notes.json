@@ -1,0 +1,8 @@
+{
+  "clips": [],
+  "processed": [
+    {"id":"n1","clipId":"c1","createdAt":1784736000000,"text":"Call the dentist to move Thursday's appointment","type":"TASKS","action":"CHECK","done":false},
+    {"id":"n2","clipId":"c2","createdAt":1784735400000,"text":"Dinner with Sarah on Wednesday at 8pm","type":"REMINDERS","action":"CALENDAR","dueAt":1784908800000,"done":false},
+    {"id":"n3","clipId":"c3","createdAt":1784734800000,"text":"Olive oil, sourdough, coffee beans, tomatoes","type":"SHOPPING","action":"CHECK","done":false}
+  ]
+}

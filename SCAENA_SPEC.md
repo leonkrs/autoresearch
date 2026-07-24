@@ -12,9 +12,16 @@ gate-driven build spec the loop works against.
 
 ```
                  scaena-core (Rust)  — devices, capture, seed, flows, framing, export
-                 /        |        \
-     scaena (CLI)   scaena-mcp (stdio)   Scaena.app (Tauri GUI)
+                /      |         |          \
+   scaena (CLI)  scaena-mcp   scaena serve   Scaena.app
+                 (stdio)      (localhost web  (Tauri wraps the
+                              UI in browser)   same web UI)
 ```
+
+The human GUI is a **local web server** (`scaena serve` → open `http://localhost:<port>`): browser-
+based like Figma, but localhost-only because it needs local device access (a cloud sandbox cannot run
+adb/simctl). The Tauri desktop app is a thin wrapper over the same web UI, so it is built once. A public
+cloud deployment is out of scope by design (the devices live on the user's machine, not a server).
 
 Everything content-bearing runs with **zero AI, zero keys, zero network**. Any future AI feature is a
 badged bonus with graceful degradation.

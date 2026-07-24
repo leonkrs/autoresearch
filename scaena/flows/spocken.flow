@@ -1,0 +1,10 @@
+# Scaena flow — drive Spocken and capture, seeding notes via run-as. Never signs in.
+# Proves the seed + flow + capture pipeline end to end on a real app.
+launch   com.spocken.app com.made.murmur.MainActivity
+wait     6000
+capture  spocken-gate
+seed     murmur_meta.json  notes.json
+stop     com.spocken.app
+launch   com.spocken.app com.made.murmur.MainActivity
+wait     8000
+capture  spocken-after-seed

@@ -6,6 +6,8 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 
+pub mod flow;
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

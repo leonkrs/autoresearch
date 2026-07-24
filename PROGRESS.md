@@ -25,3 +25,18 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   → **1080x2400 PNG, 1.37MB** (`file`: PNG RGBA). `cargo test` = 5 passed.
 - G1 now fully proven on Android (real device listed). G2: device-capture path proven; the host-screen
   orange-dot scrub is a later slice (device screenshots carry no macOS dot). Next: G3 seeding + flows.
+
+## Cycle 3 — seed + flow runner (the differentiator) · gates 2/6, G3 mechanism proven
+- `flow.rs`: line-DSL flows (launch/stop/seed/wait/capture) + `seed_app_file` (run-as, no auth) +
+  `run_flow`. CLI `scaena flow <file>`. Web-server consumer added to the spec.
+- Two real bugs found and fixed mid-loop: (1) `adb shell run-as pkg sh -c "cat > files/x"` runs the
+  `>` redirection in the OUTER shell (cwd /), not the sandbox -> switched to direct `run-as cp`;
+  (2) fixed-`wait` caught a black cold-start frame -> raised the settle.
+- Proof (live emulator): `scaena flow flows/spocken.flow` -> captured the **real Spocken Auth screen**
+  (`example-spocken-auth.png`) and **seeded 3 notes into `files/murmur_meta.json` via run-as, no
+  sign-in** (file verified). `cargo test` = 7 passed.
+- G1, G2(capture) passed. G3 mechanism proven (drive + seed-without-auth + capture real screen). Auth
+  is one of the three target screens. **Home/Empty are behind Firebase auth** -> next slice is
+  **session-replay**: human signs in ONCE, `scaena snapshot` records the app-private state, `scaena
+  seed --from <snapshot>` replays it forever. Scaena still never authenticates; it replays a
+  human-provided snapshot. Then Home/Empty capture without any sign-in.
