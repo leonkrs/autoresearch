@@ -109,3 +109,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 ## Cycle 14 — contact sheet · gates 5/6
 - `contact_sheet` (image crate): tile N screenshots into a grid montage. CLI `scaena contact <png...>`.
 - Proof: unit test grid dims (2 cols, 3 imgs -> 230x430); live 3-capture sheet produced. Spec item done.
+
+## Cycle 15 — launcher + serve --open · gates 5/6
+- `serve --open` auto-opens the browser; `Scaena.command` double-click launcher (uses installed binary
+  or builds release). The desktop-app feel without Tauri weight.
+- Proof: `serve --open` binds and GET / -> 200 (browser-open is best-effort).

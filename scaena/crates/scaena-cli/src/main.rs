@@ -19,6 +19,13 @@ fn main() {
         Some("export") => cmd_export(&args[1..]),
         Some("serve") => {
             let port: u16 = flag(&args, "--port").and_then(|s| s.parse().ok()).unwrap_or(7777);
+            if args.iter().any(|a| a == "--open") {
+                let url = format!("http://127.0.0.1:{port}");
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    let _ = std::process::Command::new("open").arg(&url).status();
+                });
+            }
             if let Err(e) = serve::run(port) { eprintln!("serve failed: {e}"); std::process::exit(1); }
         }
         Some("tokens") => cmd_tokens(&args[1..]),
