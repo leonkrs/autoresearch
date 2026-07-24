@@ -1,7 +1,7 @@
 # Scaena workspace. The autoresearch loop iterates only under scaena/.
 [workspace]
 resolver = "2"
-members = ["crates/scaena-core", "crates/scaena-cli"]
+members = ["crates/scaena-core", "crates/scaena-cli", "crates/scaena-mcp"]
 
 [workspace.package]
 version = "0.1.0"

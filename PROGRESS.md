@@ -48,3 +48,11 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   **3 notes back**. Roundtrip works with zero authentication.
 - This closes the *mechanism* for the auth-gated screens: a human signs in ONCE, `scaena snapshot`
   records it, `scaena restore` replays it forever. Loop continues to G4 (no human needed).
+
+## Cycle 5 — MCP server (G4) · gates 3/6
+- `scaena-mcp`: stdio newline-delimited JSON-RPC 2.0, deps = serde_json only (hand-rolled; honours the
+  "Rust, no Node" intent of the rmcp decision without the async/macro churn — logged in MCP.md).
+- Tools: devices, capture, seed, snapshot, restore, flow. `capture` returns the PNG inline (base64).
+- Proof: piped a full MCP session -> initialize, tools/list (6 tools), `capture` -> "1080x2400 from
+  emulator-5554" + image/png content (133KB b64). `claude mcp add scaena` -> **list shows ✔ Connected**.
+- **G4 passed.** Next: G5 (framing + store export).

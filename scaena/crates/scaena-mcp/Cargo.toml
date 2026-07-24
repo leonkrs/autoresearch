@@ -1,0 +1,14 @@
+[package]
+name = "scaena-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scaena MCP server (stdio JSON-RPC). Pure Rust, single binary, no Node runtime."
+
+[[bin]]
+name = "scaena-mcp"
+path = "src/main.rs"
+
+[dependencies]
+scaena-core = { path = "../scaena-core" }
+serde_json = "1"
