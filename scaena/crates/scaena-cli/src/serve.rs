@@ -47,6 +47,14 @@ fn handle(mut stream: TcpStream) -> io::Result<()> {
                 Err(e) => respond(&mut stream, 500, "text/plain", e.as_bytes()),
             }
         }
+        ("GET", "/api/mock") | ("POST", "/api/mock") => {
+            let header = query(target, "header").unwrap_or_else(|| "Today".into());
+            let titles = query(target, "titles").unwrap_or_default();
+            match do_mock(&header, &titles) {
+                Ok(png) => respond(&mut stream, 200, "image/png", &png),
+                Err(e) => respond(&mut stream, 500, "text/plain", e.as_bytes()),
+            }
+        }
         _ => respond(&mut stream, 404, "text/plain", b"not found"),
     }
 }
@@ -89,6 +97,19 @@ fn devices_json() -> String {
         })
         .collect();
     format!("[{}]", items.join(","))
+}
+
+fn do_mock(header: &str, titles_pipe: &str) -> Result<Vec<u8>, String> {
+    let titles: Vec<&str> = titles_pipe.split('|').map(str::trim).filter(|s| !s.is_empty()).collect();
+    if titles.is_empty() {
+        return Err("no titles (pass titles=a|b|c)".into());
+    }
+    let accents = [[235u8, 169, 72], [255, 90, 110], [111, 168, 220], [127, 200, 169], [139, 124, 246]];
+    let cards: Vec<scaena_core::mock::Card> = titles.iter().enumerate()
+        .map(|(i, t)| scaena_core::mock::Card { title: (*t).to_string(), accent: accents[i % accents.len()] })
+        .collect();
+    let font = scaena_core::mock::load_font(None)?;
+    scaena_core::mock::render_mock(header, &cards, [14, 13, 16], [25, 23, 28, 255], [245, 243, 239], [235, 169, 72], &font)
 }
 
 fn do_capture(serial: Option<&str>, framed: bool) -> Result<Vec<u8>, String> {

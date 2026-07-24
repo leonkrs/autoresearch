@@ -140,3 +140,7 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - `scaena flow <file> --dry`: parse + print steps without a device (authoring/CI). Added
   `flows/example-settings.flow` (tap) and `flows/example-deeplink.flow` (deeplink).
 - Proof: dry-run lists parsed steps for both example flows.
+
+## Cycle 20 — mock in browser (/api/mock) · gates 5/6
+- `scaena serve`: `/api/mock?header&titles=a|b|c` renders a branded mock over localhost.
+- Proof: curl -> HTTP 200 PNG. All three consumers (CLI, MCP, web) now expose the full feature set.
