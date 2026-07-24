@@ -31,6 +31,7 @@ fn main() {
         Some("tokens") => cmd_tokens(&args[1..]),
         Some("contact") => cmd_contact(&args[1..]),
         Some("mock") => cmd_mock(&args[1..]),
+        Some("doctor") => cmd_doctor(),
         Some("version") | Some("--version") | Some("-V") => println!("scaena {VERSION}"),
         _ => {
             eprintln!("scaena {VERSION}");
@@ -110,6 +111,33 @@ fn cmd_flow(args: &[String]) {
         }
         Err(e) => { eprintln!("flow failed: {e}"); std::process::exit(1); }
     }
+}
+
+fn cmd_doctor() {
+    fn check(label: &str, ok: bool, detail: &str) {
+        println!("  {} {label}{}", if ok { "[ok]" } else { "[--]" }, if detail.is_empty() { String::new() } else { format!("  {detail}") });
+    }
+    println!("scaena doctor {VERSION}");
+
+    let adb = adb_path();
+    let adb_ver = std::process::Command::new(&adb).arg("version").output();
+    let adb_ok = adb_ver.as_ref().map(|o| o.status.success()).unwrap_or(false);
+    check("adb", adb_ok, &adb);
+
+    let devices = all_devices();
+    let ready = devices.iter().filter(|d| d.is_ready()).count();
+    check("devices", !devices.is_empty(), &format!("{} total, {ready} ready", devices.len()));
+
+    let simctl = std::process::Command::new("xcrun").args(["simctl", "help"]).output().map(|o| o.status.success()).unwrap_or(false);
+    check("ios simctl", simctl, if simctl { "" } else { "no Xcode simulator runtime (iOS disabled)" });
+
+    let font = scaena_core::mock::load_font(None).is_ok();
+    check("mock font", font, if font { "system font found" } else { "no .ttf (mock text disabled)" });
+
+    let path = std::env::var("PATH").unwrap_or_default();
+    let home = std::env::var("HOME").unwrap_or_default();
+    let on_path = path.split(':').any(|p| p == format!("{home}/.local/bin"));
+    check("~/.local/bin on PATH", on_path, if on_path { "" } else { "add it to run `scaena` globally" });
 }
 
 fn cmd_mock(args: &[String]) {

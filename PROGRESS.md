@@ -130,3 +130,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 ## Cycle 17 — mock tool in MCP · gates 5/6
 - Added `mock` to `scaena-mcp` (now **11 tools**): agents render a branded screen from header+titles,
   returned as an inline image. Proof: piped session -> mock -> "1080x2400 (2 cards)" + image content.
+
+## Cycle 18 — scaena doctor · gates 5/6
+- `scaena doctor`: environment self-check (adb, devices+ready count, iOS simctl, mock font, ~/.local/bin
+  on PATH) with ok/-- flags. Onboarding + troubleshooting for the sellable path.
+- Proof: live run reports adb ok, device ready, simctl absent (iOS flagged), font ok.
