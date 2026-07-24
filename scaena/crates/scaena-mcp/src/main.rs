@@ -106,7 +106,7 @@ fn call_tool(params: Option<&Value>) -> Result<Value, (i64, String)> {
         }
         "capture" => {
             let device = pick(arg("device").as_deref()).ok_or((-32000, "no ready device".into()))?;
-            let out = PathBuf::from(std::env::temp_dir()).join(format!("scaena-{}.png", device.serial));
+            let out = std::env::temp_dir().join(format!("scaena-{}.png", device.serial));
             let bytes = capture(&device, &adb, &out).map_err(|e| (-32000, e.to_string()))?;
             let (w, h) = png_dimensions(&bytes).unwrap_or((0, 0));
             Ok(json!({"content":[
@@ -231,7 +231,7 @@ fn pick(serial: Option<&str>) -> Option<Device> {
 /// Standard base64 (no external crate) for returning image bytes inline.
 fn b64(bytes: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut s = String::with_capacity((bytes.len() + 2) / 3 * 4);
+    let mut s = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for c in bytes.chunks(3) {
         let b = [c[0], *c.get(1).unwrap_or(&0), *c.get(2).unwrap_or(&0)];
         let n = (b[0] as u32) << 16 | (b[1] as u32) << 8 | b[2] as u32;

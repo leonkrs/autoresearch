@@ -144,3 +144,9 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 ## Cycle 20 — mock in browser (/api/mock) · gates 5/6
 - `scaena serve`: `/api/mock?header&titles=a|b|c` renders a branded mock over localhost.
 - Proof: curl -> HTTP 200 PNG. All three consumers (CLI, MCP, web) now expose the full feature set.
+
+## Cycle 21 — clippy clean + CI · gates 5/6
+- `cargo clippy --all-targets` = **0 warnings** (auto-fixed 2 in scaena-mcp). Added CI workflow
+  (`.github/workflows/scaena-ci.yml`): `cargo test` + `cargo clippy -D warnings` on push to `scaena`.
+- The unit tests are hermetic (parsers, image ops, tokens) so CI needs no device. Proof: clippy 0,
+  tests green, workflow YAML valid.

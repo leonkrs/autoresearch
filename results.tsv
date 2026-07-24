@@ -20,3 +20,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 18	2026-07-24	scaena doctor (env self-check)	v1	5	yes	scaena doctor checks adb/devices/simctl/mock-font/PATH; live run shows adb ok, 1 device ready, simctl absent flagged, font ok
 19	2026-07-24	flow --dry + example flows	v1	5	yes	flow --dry parses+prints steps without a device; validated example-settings.flow (6 steps) and example-deeplink.flow. Authoring/CI-friendly
 20	2026-07-24	mock in browser (/api/mock)	v1	5	yes	scaena serve /api/mock?header&titles=a|b|c renders a branded mock PNG over localhost (HTTP 200). All three consumers (CLI/MCP/web) now cover the full feature set
+21	2026-07-24	clippy clean + CI workflow	v1	5	yes	cargo clippy --all-targets = 0 warnings (auto-fixed 2 in scaena-mcp); tests pass; added .github/workflows/scaena-ci.yml (cargo test + clippy -D warnings, hermetic unit tests). YAML valid

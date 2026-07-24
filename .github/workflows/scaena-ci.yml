@@ -1,0 +1,21 @@
+name: scaena-ci
+on:
+  push:
+    branches: [scaena]
+    paths: ["scaena/**", ".github/workflows/scaena-ci.yml"]
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scaena
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: test
+        run: cargo test --all
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
