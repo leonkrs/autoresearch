@@ -3,7 +3,9 @@
 //! and snapshot/restore — the same core the CLI and GUI use. Zero AI, zero network of its own.
 
 use scaena_core::flow::{parse_flow, restore, run_flow, snapshot};
-use scaena_core::{adb_path, all_devices, capture, png_dimensions, Device};
+use scaena_core::render::{export_store, frame_png, preset, scrub_orange_dot};
+use scaena_core::tokens;
+use scaena_core::{adb_path, all_devices, capture, capture_host, png_dimensions, Device};
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -68,7 +70,15 @@ fn tools() -> Value {
         {"name":"restore","description":"Replay a snapshot tar into an app (no sign-in).",
          "inputSchema": obj(json!({"pkg":{"type":"string"},"tar":{"type":"string"}}), json!(["pkg","tar"]))},
         {"name":"flow","description":"Run a Scaena flow file (launch/seed/wait/capture). Returns captured PNG paths.",
-         "inputSchema": obj(json!({"file":{"type":"string"},"out":{"type":"string"}}), json!(["file"]))}
+         "inputSchema": obj(json!({"file":{"type":"string"},"out":{"type":"string"}}), json!(["file"]))},
+        {"name":"capture_host","description":"Screenshot the macOS host screen (optional region x,y,w,h), orange-dot scrubbed.",
+         "inputSchema": obj(json!({"region":{"type":"string","description":"x,y,w,h"},"out":{"type":"string"}}), json!([]))},
+        {"name":"frame","description":"Wrap a screenshot PNG in a padded, rounded device frame. Returns the framed path.",
+         "inputSchema": obj(json!({"src":{"type":"string"},"out":{"type":"string"},"pad":{"type":"integer"},"radius":{"type":"integer"}}), json!(["src"]))},
+        {"name":"export","description":"Make a screenshot store-dimension compliant (play|appstore). Returns the path.",
+         "inputSchema": obj(json!({"src":{"type":"string"},"store":{"type":"string"},"out":{"type":"string"}}), json!(["src"]))},
+        {"name":"tokens","description":"Import brand color tokens from a Theme.kt or CSS file. Returns JSON.",
+         "inputSchema": obj(json!({"file":{"type":"string"}}), json!(["file"]))}
     ])
 }
 
@@ -132,6 +142,49 @@ fn call_tool(params: Option<&Value>) -> Result<Value, (i64, String)> {
             let shots = run_flow(&adb, &device, &steps, base, &out).map_err(|e| (-32000, e.to_string()))?;
             let paths: Vec<String> = shots.iter().map(|p| p.display().to_string()).collect();
             Ok(text(format!("flow ok, {} capture(s): {}", paths.len(), paths.join(", "))))
+        }
+        "capture_host" => {
+            let region = arg("region").and_then(|s| {
+                let n: Vec<u32> = s.split(',').filter_map(|p| p.trim().parse().ok()).collect();
+                (n.len() == 4).then(|| (n[0], n[1], n[2], n[3]))
+            });
+            let out = arg("out").map(PathBuf::from)
+                .unwrap_or_else(|| std::env::temp_dir().join("scaena-host.png"));
+            let raw = capture_host(region, &out).map_err(|e| (-32000, e.to_string()))?;
+            let png = scrub_orange_dot(&raw, 60, [28, 28, 30]).map_err(|e| (-32000, e))?;
+            std::fs::write(&out, &png).map_err(|e| (-32000, e.to_string()))?;
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            Ok(json!({"content":[
+                {"type":"text","text": format!("host capture {w}x{h} (orange-dot scrubbed) -> {}", out.display())},
+                {"type":"image","data": b64(&png), "mimeType":"image/png"}
+            ]}))
+        }
+        "frame" => {
+            let src = req_str(&a, "src")?;
+            let pad = a.get("pad").and_then(Value::as_u64).unwrap_or(64) as u32;
+            let radius = a.get("radius").and_then(Value::as_u64).unwrap_or(48) as u32;
+            let out = arg("out").unwrap_or_else(|| format!("{src}.framed.png"));
+            let bytes = std::fs::read(&src).map_err(|e| (-32000, e.to_string()))?;
+            let png = frame_png(&bytes, pad, [14, 13, 16, 255], radius).map_err(|e| (-32000, e))?;
+            std::fs::write(&out, &png).map_err(|e| (-32000, e.to_string()))?;
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            Ok(text(format!("framed -> {out} ({w}x{h})")))
+        }
+        "export" => {
+            let src = req_str(&a, "src")?;
+            let store = arg("store").unwrap_or_else(|| "play".into());
+            let p = preset(&store).ok_or((-32602, format!("unknown store: {store}")))?;
+            let out = arg("out").unwrap_or_else(|| format!("{src}.store.png"));
+            let bytes = std::fs::read(&src).map_err(|e| (-32000, e.to_string()))?;
+            let (png, w, h) = export_store(&bytes, &p).map_err(|e| (-32000, e))?;
+            std::fs::write(&out, &png).map_err(|e| (-32000, e.to_string()))?;
+            Ok(text(format!("exported {} ({w}x{h}) -> {out}", p.name)))
+        }
+        "tokens" => {
+            let file = req_str(&a, "file")?;
+            let text_src = std::fs::read_to_string(&file).map_err(|e| (-32000, e.to_string()))?;
+            let toks = tokens::import(&text_src, &file);
+            Ok(text(tokens::to_json(&toks)))
         }
         other => Err((-32601, format!("unknown tool: {other}"))),
     }

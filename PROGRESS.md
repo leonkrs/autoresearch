@@ -85,3 +85,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - `tokens.rs`: parse Compose `Color(0xAARRGGBB)` and CSS `--name:#hex` -> {name,hex} JSON (std only).
 - Proof: `scaena tokens` on Spocken real `Theme.kt` -> Amber #EBA948, Ink #0E0D10, Violet, RecordRed,
   Sky. Unit tests: kotlin alpha-drop, css vars. Feeds mock-render + brand-colored framing.
+
+## Cycle 10 — MCP full toolset · gates 5/6
+- Extended `scaena-mcp` from 6 to **10 tools**: added capture_host, frame, export, tokens.
+- Proof: piped session -> tools/list = 10; `tokens` tool on real Theme.kt -> 13 tokens (Amber #EBA948).
+  The core goal "an agent drives the whole pipeline" is met end to end.
