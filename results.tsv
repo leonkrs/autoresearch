@@ -23,3 +23,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 21	2026-07-24	clippy clean + CI workflow	v1	5	yes	cargo clippy --all-targets = 0 warnings (auto-fixed 2 in scaena-mcp); tests pass; added .github/workflows/scaena-ci.yml (cargo test + clippy -D warnings, hermetic unit tests). YAML valid
 22	2026-07-24	fix css parser bug caught by CI	tokens	5	yes	CI (ubuntu) caught css_vars FAILED that my local grep masked; from_css now splits on {/} so `:root{ --accent` parses; full cargo test = 16 passed 0 failed. Re-run CI to confirm green
 23	2026-07-24	flow --frame (store-ready in one pass)	v1	5	yes	scaena flow --frame wraps each capture in a device frame in place; live flow --frame -> framed 1200x2520 capture; 16 tests pass 0 failed
+24	2026-07-24	dogfood: README demo via scaena itself	v1	5	yes	docs/demo.png built entirely by scaena mock+frame+contact (synthetic, no personal data); referenced in README. Proves the full pipeline in one artifact

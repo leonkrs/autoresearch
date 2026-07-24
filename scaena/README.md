@@ -6,6 +6,10 @@ reproducibly — including screens **behind an auth wall**, by seeding app state
 
 Zero AI, zero keys, zero network of its own. `adb` talks to a local emulator; nothing leaves the machine.
 
+![Scaena demo](docs/demo.png)
+
+*(The image above was produced entirely by Scaena — `mock` + `frame` + `contact` — dogfooding the pipeline.)*
+
 ## Why
 
 Producing app screenshots is a recurring chore, and every tool fails on one axis: Figma has a paid cap,

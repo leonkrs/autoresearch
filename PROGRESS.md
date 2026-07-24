@@ -160,3 +160,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 ## Cycle 23 — flow --frame · gates 5/6
 - `scaena flow --frame`: wrap each captured screen in a device frame in place (store-ready in one pass).
 - Proof: live `flow --frame` -> framed 1200x2520 capture; full test suite 16 passed, 0 failed.
+
+## Cycle 24 — dogfood README demo · gates 5/6
+- Generated `scaena/docs/demo.png` using scaena itself (`mock` x2 -> `frame` x2 -> `contact`), referenced
+  in the README. **Privacy:** a first pass captured Spocken real signed-in Home (Made had signed in in
+  parallel) which held personal notes -> discarded; regenerated from synthetic mocks only, no real data.
