@@ -6,3 +6,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 4	2026-07-24	snapshot/restore (session-replay)	G3	2	yes	snapshot com.spocken.app -> 6144B tar; wipe -> restore -> 3 notes back (roundtrip proven). Session-replay mechanism done; a SIGNED-IN snapshot still needs one human sign-in
 5	2026-07-24	MCP server (rmcp intent, hand-rolled)	G4	3	yes	scaena-mcp stdio JSON-RPC: initialize + tools/list(6) + capture returns real 1080x2400 PNG inline (b64 133KB); registered in Claude Code -> Connected. Pure Rust, no Node
 6	2026-07-24	framing + store export (G5)	G5	4	yes	capture->frame(1080x2400->1200x2520 padded+rounded)->export play-compliant; 10 unit tests; caught+fixed --out value leaking into positional inputs
+7	2026-07-24	browser GUI (scaena serve) + offline (G6)	G6	5	yes	scaena serve: /api/devices JSON, / HTML UI, /api/capture -> real 1080x2400 PNG over localhost; zero HTTP/network-client deps (offline by construction). Tauri wrapper = thin wrapper over same UI, deferred

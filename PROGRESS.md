@@ -65,3 +65,12 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Loop caught a real bug: `--out`'s value was mistaken for a positional input -> added `positionals()`
   that skips value-flag args. Re-verified clean.
 - **G5 passed.** Next: G6 (browser GUI via `scaena serve` + offline end-to-end).
+
+## Cycle 7 — browser GUI (scaena serve) + offline (G6) · gates 5/6
+- `serve.rs`: hand-rolled std HTTP/1.1 server (no web-framework dep). Serves a dark web UI + JSON/image
+  API over the core: `/api/devices`, `/api/capture`. CLI `scaena serve [--port]`.
+- Proof: curl `/api/devices` -> emulator JSON; `/` -> HTML UI; `/api/capture` -> HTTP 200 real 1080x2400
+  PNG. Offline: grep shows zero HTTP/network-client deps (adb = local socket; image+serde_json only).
+- **G6 passed.** Browser-based GUI like Figma but localhost. Tauri desktop = thin wrapper over the same
+  UI (deferred). Remaining: G3 signed-in Home/Empty needs a one-time human sign-in (blocked; skipped).
+  Loop continues on unblocked work (v0.6: host-scrub, token import, richer web UI).

@@ -1,5 +1,7 @@
 //! Scaena CLI. Thin shell over scaena-core. Same capabilities the MCP server and GUI will expose.
 
+mod serve;
+
 use scaena_core::flow::{parse_flow, restore, run_flow, snapshot};
 use scaena_core::render::{export_store, frame_png, preset};
 use scaena_core::{adb_path, all_devices, capture, png_dimensions, Device, VERSION};
@@ -15,6 +17,10 @@ fn main() {
         Some("restore") => cmd_restore(&args[1..]),
         Some("frame") => cmd_frame(&args[1..]),
         Some("export") => cmd_export(&args[1..]),
+        Some("serve") => {
+            let port: u16 = flag(&args, "--port").and_then(|s| s.parse().ok()).unwrap_or(7777);
+            if let Err(e) = serve::run(port) { eprintln!("serve failed: {e}"); std::process::exit(1); }
+        }
         Some("version") | Some("--version") | Some("-V") => println!("scaena {VERSION}"),
         _ => {
             eprintln!("scaena {VERSION}");
