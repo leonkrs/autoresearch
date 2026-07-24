@@ -87,6 +87,9 @@ pub enum Step {
     Seed { rel: String, src: String },
     Wait { ms: u64 },
     Capture { name: String },
+    Tap { x: u32, y: u32 },
+    Key { code: String },
+    Deeplink { url: String },
 }
 
 /// Parse a flow file (line DSL). `#` comments and blank lines ignored. Verbs:
@@ -118,6 +121,12 @@ pub fn parse_flow(text: &str) -> Result<Vec<Step>, String> {
             "capture" => Step::Capture {
                 name: a.first().ok_or_else(|| err("capture <name>"))?.to_string(),
             },
+            "tap" => Step::Tap {
+                x: a.first().and_then(|s| s.parse().ok()).ok_or_else(|| err("tap <x> <y>"))?,
+                y: a.get(1).and_then(|s| s.parse().ok()).ok_or_else(|| err("tap <x> <y>"))?,
+            },
+            "key" => Step::Key { code: a.first().ok_or_else(|| err("key <keycode>"))?.to_string() },
+            "deeplink" => Step::Deeplink { url: a.first().ok_or_else(|| err("deeplink <url>"))?.to_string() },
             other => return Err(err(&format!("unknown verb '{other}'"))),
         };
         steps.push(step);
@@ -158,6 +167,11 @@ pub fn run_flow(
                 seed_app_file(adb, serial, &cur_pkg, rel, &base_dir.join(src))?;
             }
             Step::Wait { ms } => std::thread::sleep(Duration::from_millis(*ms)),
+            Step::Tap { x, y } => adb_ok(adb, serial, &["shell", "input", "tap", &x.to_string(), &y.to_string()])?,
+            Step::Key { code } => adb_ok(adb, serial, &["shell", "input", "keyevent", code])?,
+            Step::Deeplink { url } => {
+                adb_ok(adb, serial, &["shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", url])?
+            }
             Step::Capture { name } => {
                 let out = out_dir.join(format!("{name}.png"));
                 capture(device, adb, &out)?;
@@ -171,6 +185,15 @@ pub fn run_flow(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_input_verbs() {
+        let s = parse_flow("tap 100 200\nkey KEYCODE_BACK\ndeeplink myapp://home\n").unwrap();
+        assert_eq!(s[0], Step::Tap { x: 100, y: 200 });
+        assert_eq!(s[1], Step::Key { code: "KEYCODE_BACK".into() });
+        assert_eq!(s[2], Step::Deeplink { url: "myapp://home".into() });
+        assert!(parse_flow("tap 100").is_err());
+    }
 
     #[test]
     fn parses_a_flow() {

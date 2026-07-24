@@ -94,3 +94,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 ## Cycle 11 — richer browser GUI · gates 5/6
 - `scaena serve`: /api/capture accepts `frame=1` -> capture wrapped in a device frame; UI checkbox.
 - Proof: `frame=0` -> 1080x2400; `frame=1` -> 1200x2520 framed, over localhost.
+
+## Cycle 12 — flow verbs tap/key/deeplink · gates 5/6
+- Flow DSL extended: `tap x y` (input tap), `key KEYCODE` (keyevent), `deeplink url` (VIEW intent).
+- Proof: parse tests + a live flow (launch/tap/key/capture) drove the emulator and produced a PNG.
+  More primitives to reach any screen deterministically.
