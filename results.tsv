@@ -12,3 +12,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 10	2026-07-24	MCP full toolset (10 tools)	G4+	5	yes	MCP now exposes devices/capture/seed/snapshot/restore/flow/capture_host/frame/export/tokens; verified via piped session; tokens tool -> 13 real Spocken tokens. Agents get the whole pipeline
 11	2026-07-24	richer web GUI (frame toggle)	G6+	5	yes	scaena serve /api/capture?frame=1 returns framed (larger) PNG; browser UI has a frame checkbox. Browser GUI now does capture+frame
 12	2026-07-24	flow verbs: tap/key/deeplink	G3+	5	yes	flow DSL gains tap/key/deeplink (input tap, keyevent, VIEW intent); parse tests + live flow with tap+key drove emulator and captured. More ways to reach any screen
+13	2026-07-24	package: README + install.sh (release)	v1	5	yes	readme covers all real commands; install.sh builds release + symlinks scaena/scaena-mcp; verified installed `scaena version`+`scaena devices` run from the symlinked release binary

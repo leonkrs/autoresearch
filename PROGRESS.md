@@ -99,3 +99,9 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Flow DSL extended: `tap x y` (input tap), `key KEYCODE` (keyevent), `deeplink url` (VIEW intent).
 - Proof: parse tests + a live flow (launch/tap/key/capture) drove the emulator and produced a PNG.
   More primitives to reach any screen deterministically.
+
+## Cycle 13 — package: README + install (install-in-place) · gates 5/6
+- `scaena/README.md` (all real commands) + `install.sh` (release build + symlink scaena/scaena-mcp into
+  ~/.local/bin, in-place).
+- Proof: ran install to a temp bin dir; the **release** `scaena version` + `scaena devices` run from the
+  symlinked binary. Packaged clean enough to sell (per the distribution decision).
