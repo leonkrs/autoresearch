@@ -2,7 +2,7 @@
 //! Exposes Scaena's capabilities so an agent can list devices, capture screens, seed state, run flows,
 //! and snapshot/restore — the same core the CLI and GUI use. Zero AI, zero network of its own.
 
-use scaena_core::flow::{parse_flow, restore, run_flow, snapshot};
+use scaena_core::flow::{parse_flow, restore, run_flow, snapshot, snapshot_dirs};
 use scaena_core::render::{export_store, frame_png, preset, scrub_orange_dot};
 use scaena_core::tokens;
 use scaena_core::{adb_path, all_devices, capture, capture_host, png_dimensions, Device};
@@ -65,8 +65,8 @@ fn tools() -> Value {
          "inputSchema": obj(json!({"device":{"type":"string","description":"serial/udid; default first ready"}}), json!([]))},
         {"name":"seed","description":"Write a host file into an app's private files/<rel> via run-as (no sign-in).",
          "inputSchema": obj(json!({"pkg":{"type":"string"},"rel":{"type":"string"},"src":{"type":"string"}}), json!(["pkg","rel","src"]))},
-        {"name":"snapshot","description":"Save an app's private state (files/) to a host tar.",
-         "inputSchema": obj(json!({"pkg":{"type":"string"},"out":{"type":"string"}}), json!(["pkg"]))},
+        {"name":"snapshot","description":"Save an app's private state to a host tar. full=true also captures shared_prefs+databases (the signed-in session) for session-replay.",
+         "inputSchema": obj(json!({"pkg":{"type":"string"},"out":{"type":"string"},"full":{"type":"boolean"}}), json!(["pkg"]))},
         {"name":"restore","description":"Replay a snapshot tar into an app (no sign-in).",
          "inputSchema": obj(json!({"pkg":{"type":"string"},"tar":{"type":"string"}}), json!(["pkg","tar"]))},
         {"name":"flow","description":"Run a Scaena flow file (launch/seed/wait/capture). Returns captured PNG paths.",
@@ -125,8 +125,14 @@ fn call_tool(params: Option<&Value>) -> Result<Value, (i64, String)> {
             let device = pick(None).ok_or((-32000, "no ready device".into()))?;
             let pkg = req_str(&a, "pkg")?;
             let out = arg("out").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(format!("{pkg}.snapshot.tar")));
-            let n = snapshot(&adb, &device.serial, &pkg, &out).map_err(|e| (-32000, e.to_string()))?;
-            Ok(text(format!("snapshot {} ({n} bytes)", out.display())))
+            let full = a.get("full").and_then(Value::as_bool).unwrap_or(false);
+            let n = if full {
+                snapshot_dirs(&adb, &device.serial, &pkg, &out, &["files", "shared_prefs", "databases"])
+            } else {
+                snapshot(&adb, &device.serial, &pkg, &out)
+            }
+            .map_err(|e| (-32000, e.to_string()))?;
+            Ok(text(format!("snapshot{} {} ({n} bytes)", if full { " --full" } else { "" }, out.display())))
         }
         "restore" => {
             let device = pick(None).ok_or((-32000, "no ready device".into()))?;

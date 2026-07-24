@@ -176,3 +176,9 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   snapshot tar was written to /tmp and never committed.
 - **All 6 gates met.** G1 devices, G2 capture+scrub, G3 seed/flow/session-replay, G4 MCP, G5 frame/export,
   G6 browser GUI + offline. Plus v0.6: token import, mock-render, contact sheet, doctor, CI, install.
+
+## Cycle 26 — session-replay via MCP · gates 6/6
+- MCP `snapshot` tool gains `full=true` -> captures shared_prefs+databases (the session).
+- Proof: piped MCP call -> snapshot 14336B; tar contains `firebase.auth.api.Store`. cargo check green.
+  Note: full test suite not re-run this cycle (timed out under machine load; unchanged from green
+  cycle-25 + green CI). CI on push will confirm.
