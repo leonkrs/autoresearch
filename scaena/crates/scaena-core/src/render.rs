@@ -85,6 +85,25 @@ pub fn export_store(src: &[u8], p: &StorePreset) -> Result<(Vec<u8>, u32, u32), 
     Ok((encode_png(out)?, fw, fh))
 }
 
+/// Scrub the macOS orange screen-recording dot from the top strip of a host capture: any orange-ish
+/// pixel in the first `strip` rows is replaced with `fill`. Device screenshots never have this dot;
+/// only host (`screencapture`) captures do.
+pub fn scrub_orange_dot(src: &[u8], strip: u32, fill: [u8; 3]) -> Result<Vec<u8>, String> {
+    let mut img = image::load_from_memory(src).map_err(|e| e.to_string())?.to_rgba8();
+    let (w, h) = img.dimensions();
+    let sh = strip.min(h);
+    for y in 0..sh {
+        for x in 0..w {
+            let p = img.get_pixel(x, y);
+            // Orange-ish (#FF9500 and neighbours): high R, mid G, low B.
+            if p[0] > 200 && (120..200).contains(&p[1]) && p[2] < 90 {
+                img.put_pixel(x, y, Rgba([fill[0], fill[1], fill[2], 255]));
+            }
+        }
+    }
+    encode_png(DynamicImage::ImageRgba8(img))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,5 +134,18 @@ mod tests {
         let src = solid(1080, 2400);
         let (_b, w, h) = export_store(&src, &PLAY).unwrap();
         assert_eq!((w, h), (1080, 2400)); // already within spec, unchanged
+    }
+
+    #[test]
+    fn scrub_removes_orange_in_strip_only() {
+        // Canvas with an orange pixel in the top strip and one below it.
+        let mut img = RgbaImage::from_pixel(40, 200, Rgba([10, 10, 12, 255]));
+        img.put_pixel(5, 5, Rgba([255, 149, 0, 255])); // orange, in strip
+        img.put_pixel(5, 120, Rgba([255, 149, 0, 255])); // orange, below strip
+        let src = encode_png(DynamicImage::ImageRgba8(img)).unwrap();
+        let out = scrub_orange_dot(&src, 60, [28, 28, 30]).unwrap();
+        let d = image::load_from_memory(&out).unwrap().to_rgba8();
+        assert_eq!(d.get_pixel(5, 5).0, [28, 28, 30, 255], "orange in strip scrubbed");
+        assert_eq!(d.get_pixel(5, 120).0, [255, 149, 0, 255], "orange below strip untouched");
     }
 }

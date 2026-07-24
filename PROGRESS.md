@@ -74,3 +74,9 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - **G6 passed.** Browser-based GUI like Figma but localhost. Tauri desktop = thin wrapper over the same
   UI (deferred). Remaining: G3 signed-in Home/Empty needs a one-time human sign-in (blocked; skipped).
   Loop continues on unblocked work (v0.6: host-scrub, token import, richer web UI).
+
+## Cycle 8 — host capture + orange-dot scrub (G2 fully closed) · gates 5/6
+- `capture_host` (macOS `screencapture -x`, optional `--region`) + `scrub_orange_dot` (image crate:
+  orange pixels in top strip -> dark). CLI `scaena capture --host`.
+- Proof: live host PNG produced + scrubbed; unit test scrubs orange in the strip only (leaves orange
+  below untouched). `cargo test` green. G2 (capture + macOS orange-dot scrub) now fully closed.

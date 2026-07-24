@@ -3,8 +3,8 @@
 mod serve;
 
 use scaena_core::flow::{parse_flow, restore, run_flow, snapshot};
-use scaena_core::render::{export_store, frame_png, preset};
-use scaena_core::{adb_path, all_devices, capture, png_dimensions, Device, VERSION};
+use scaena_core::render::{export_store, frame_png, preset, scrub_orange_dot};
+use scaena_core::{adb_path, all_devices, capture, capture_host, png_dimensions, Device, VERSION};
 use std::path::{Path, PathBuf};
 
 fn main() {
@@ -102,6 +102,27 @@ fn cmd_flow(args: &[String]) {
     }
 }
 
+fn cmd_capture_host(args: &[String]) {
+    let out = flag(args, "--out").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("scaena-host.png"));
+    let region = flag(args, "--region").and_then(|s| {
+        let n: Vec<u32> = s.split(',').filter_map(|p| p.trim().parse().ok()).collect();
+        (n.len() == 4).then(|| (n[0], n[1], n[2], n[3]))
+    });
+    let raw = match capture_host(region, &out) {
+        Ok(b) => b,
+        Err(e) => { eprintln!("host capture failed: {e}"); std::process::exit(1); }
+    };
+    // Scrub the macOS orange screen-recording dot from the top strip.
+    match scrub_orange_dot(&raw, 60, [28, 28, 30]) {
+        Ok(png) => {
+            let _ = std::fs::write(&out, &png);
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            println!("host capture -> {} ({w}x{h}, orange-dot scrubbed)", out.display());
+        }
+        Err(e) => { eprintln!("scrub failed: {e}"); std::process::exit(1); }
+    }
+}
+
 fn cmd_frame(args: &[String]) {
     let Some(src) = args.first().filter(|a| !a.starts_with("--")) else {
         eprintln!("usage: scaena frame <png> [--out F] [--pad N] [--radius N]"); std::process::exit(2);
@@ -175,6 +196,9 @@ fn cmd_devices() {
 }
 
 fn cmd_capture(args: &[String]) {
+    if args.iter().any(|a| a == "--host") {
+        return cmd_capture_host(args);
+    }
     let serial = flag(args, "--device");
     let out = flag(args, "--out").map(PathBuf::from);
 

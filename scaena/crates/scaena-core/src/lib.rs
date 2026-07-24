@@ -169,6 +169,22 @@ pub fn capture(device: &Device, adb: &str, out: &Path) -> io::Result<Vec<u8>> {
     }
 }
 
+/// Capture the macOS host screen (or a region) via `screencapture -x`. Used for desktop apps or the
+/// emulator window; unlike device captures, the result may carry the orange screen-recording dot, so
+/// callers should run [`render::scrub_orange_dot`] on it. Returns the raw PNG bytes.
+pub fn capture_host(region: Option<(u32, u32, u32, u32)>, out: &Path) -> io::Result<Vec<u8>> {
+    let mut cmd = Command::new("screencapture");
+    cmd.arg("-x");
+    if let Some((x, y, w, h)) = region {
+        cmd.args(["-R", &format!("{x},{y},{w},{h}")]);
+    }
+    cmd.arg(out);
+    if !cmd.status()?.success() {
+        return Err(io::Error::other("screencapture failed"));
+    }
+    std::fs::read(out)
+}
+
 /// Read (width, height) from a PNG's IHDR without any image crate. None if the bytes are not a PNG.
 /// Used to prove a capture is a real, non-empty image.
 pub fn png_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
