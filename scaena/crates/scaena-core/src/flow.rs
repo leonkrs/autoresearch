@@ -46,9 +46,30 @@ pub fn seed_app_file(adb: &str, serial: &str, pkg: &str, rel: &str, host_src: &P
 /// a human signs in ONCE, we snapshot the resulting state, and `restore` replays it forever. Scaena
 /// itself never authenticates. Returns the tar byte length.
 pub fn snapshot(adb: &str, serial: &str, pkg: &str, out: &Path) -> io::Result<u64> {
-    let output = Command::new(adb)
-        .args(["-s", serial, "exec-out", "run-as", pkg, "tar", "-c", "files"])
-        .output()?;
+    snapshot_dirs(adb, serial, pkg, out, &["files"])
+}
+
+/// Snapshot chosen private sub-dirs. Full state (`files`, `shared_prefs`, `databases`) captures the
+/// signed-in session too — the human signs in once, this records it, `restore` replays it forever.
+/// Non-existent dirs are skipped. This is the session-replay path for auth-gated screens.
+pub fn snapshot_dirs(adb: &str, serial: &str, pkg: &str, out: &Path, dirs: &[&str]) -> io::Result<u64> {
+    let existing: Vec<&str> = dirs
+        .iter()
+        .copied()
+        .filter(|d| {
+            Command::new(adb)
+                .args(["-s", serial, "shell", "run-as", pkg, "ls", d])
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false)
+        })
+        .collect();
+    if existing.is_empty() {
+        return Err(io::Error::other("no snapshot dirs exist"));
+    }
+    let mut args = vec!["-s", serial, "exec-out", "run-as", pkg, "tar", "-c"];
+    args.extend(existing.iter().copied());
+    let output = Command::new(adb).args(&args).output()?;
     if !output.status.success() || output.stdout.is_empty() {
         return Err(io::Error::other(format!(
             "snapshot failed: {}",

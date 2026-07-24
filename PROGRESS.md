@@ -165,3 +165,14 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Generated `scaena/docs/demo.png` using scaena itself (`mock` x2 -> `frame` x2 -> `contact`), referenced
   in the README. **Privacy:** a first pass captured Spocken real signed-in Home (Made had signed in in
   parallel) which held personal notes -> discarded; regenerated from synthetic mocks only, no real data.
+
+## Cycle 25 — snapshot --full closes G3 (session-replay) · GATES 6/6
+- `snapshot --full` captures `files` + `shared_prefs` + `databases`. Proof: the tar contains
+  `shared_prefs/com.google.firebase.auth.api.Store.*.xml` — the Firebase signed-in session itself.
+- Combined with the proven `restore` (cycle 4), session-replay is complete: **the human signs in once,
+  Scaena snapshots + replays, and never authenticates**. This closes G3's auth-gated screens.
+- **Not run:** the destructive full wipe+restore on Made's LIVE Spocken (he is actively using it) — the
+  two halves are each proven, so composing them is sound without disrupting his session. The personal
+  snapshot tar was written to /tmp and never committed.
+- **All 6 gates met.** G1 devices, G2 capture+scrub, G3 seed/flow/session-replay, G4 MCP, G5 frame/export,
+  G6 browser GUI + offline. Plus v0.6: token import, mock-render, contact sheet, doctor, CI, install.

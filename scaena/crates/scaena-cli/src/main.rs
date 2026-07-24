@@ -55,8 +55,14 @@ fn cmd_snapshot(args: &[String]) {
         eprintln!("no ready device (try: scaena devices)"); std::process::exit(1);
     };
     let out = flag(args, "--out").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(format!("{pkg}.snapshot.tar")));
-    match snapshot(&adb_path(), &device.serial, pkg, &out) {
-        Ok(n) => println!("snapshot {} ({} bytes) from {}", out.display(), n, device.serial),
+    let full = args.iter().any(|a| a == "--full");
+    let res = if full {
+        scaena_core::flow::snapshot_dirs(&adb_path(), &device.serial, pkg, &out, &["files", "shared_prefs", "databases"])
+    } else {
+        snapshot(&adb_path(), &device.serial, pkg, &out)
+    };
+    match res {
+        Ok(n) => println!("snapshot{} {} ({} bytes) from {}", if full { " --full (session)" } else { "" }, out.display(), n, device.serial),
         Err(e) => { eprintln!("snapshot failed: {e}"); std::process::exit(1); }
     }
 }
