@@ -1,0 +1,4 @@
+# Example: jump straight to a screen via a deep link, then capture.
+deeplink myapp://profile/42
+wait     3000
+capture  profile

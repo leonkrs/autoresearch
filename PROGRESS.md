@@ -135,3 +135,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - `scaena doctor`: environment self-check (adb, devices+ready count, iOS simctl, mock font, ~/.local/bin
   on PATH) with ok/-- flags. Onboarding + troubleshooting for the sellable path.
 - Proof: live run reports adb ok, device ready, simctl absent (iOS flagged), font ok.
+
+## Cycle 19 — flow --dry + examples · gates 5/6
+- `scaena flow <file> --dry`: parse + print steps without a device (authoring/CI). Added
+  `flows/example-settings.flow` (tap) and `flows/example-deeplink.flow` (deeplink).
+- Proof: dry-run lists parsed steps for both example flows.

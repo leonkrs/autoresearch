@@ -82,12 +82,8 @@ fn cmd_flow(args: &[String]) {
     };
     let out_dir = flag(args, "--out").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("scaena-out"));
     let serial = flag(args, "--device");
+    let dry = args.iter().any(|a| a == "--dry");
 
-    let device = pick_device(serial.as_deref());
-    let Some(device) = device else {
-        eprintln!("no ready device (try: scaena devices)");
-        std::process::exit(1);
-    };
     let text = match std::fs::read_to_string(file) {
         Ok(t) => t,
         Err(e) => { eprintln!("cannot read flow {file}: {e}"); std::process::exit(1); }
@@ -95,6 +91,18 @@ fn cmd_flow(args: &[String]) {
     let steps = match parse_flow(&text) {
         Ok(s) => s,
         Err(e) => { eprintln!("flow parse error: {e}"); std::process::exit(1); }
+    };
+    if dry {
+        println!("flow {file}: {} step(s) (dry, no device)", steps.len());
+        for (i, s) in steps.iter().enumerate() {
+            println!("  {}. {s:?}", i + 1);
+        }
+        return;
+    }
+    let device = pick_device(serial.as_deref());
+    let Some(device) = device else {
+        eprintln!("no ready device (try: scaena devices)");
+        std::process::exit(1);
     };
     let base_dir = Path::new(file).parent().unwrap_or(Path::new("."));
     match run_flow(&adb_path(), &device, &steps, base_dir, &out_dir) {

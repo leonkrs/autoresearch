@@ -1,0 +1,7 @@
+# Example: open an app, tap into a screen, capture it. No sign-in.
+launch   com.example.app com.example.app.MainActivity
+wait     4000
+tap      540 1200
+wait     800
+capture  settings
+stop
