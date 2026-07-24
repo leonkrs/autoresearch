@@ -85,6 +85,34 @@ pub fn export_store(src: &[u8], p: &StorePreset) -> Result<(Vec<u8>, u32, u32), 
     Ok((encode_png(out)?, fw, fh))
 }
 
+/// Tile several screenshots into a single contact sheet (grid montage), each scaled to `thumb_w`.
+pub fn contact_sheet(images: &[Vec<u8>], cols: u32, thumb_w: u32, gap: u32, bg: [u8; 4]) -> Result<Vec<u8>, String> {
+    if images.is_empty() {
+        return Err("no images".into());
+    }
+    let cols = cols.max(1);
+    let mut thumbs = Vec::new();
+    for b in images {
+        let img = image::load_from_memory(b).map_err(|e| e.to_string())?;
+        let (w, h) = (img.width().max(1), img.height());
+        let th = (thumb_w as f32 * h as f32 / w as f32).round().max(1.0) as u32;
+        thumbs.push(img.resize_exact(thumb_w, th, imageops::FilterType::Triangle).to_rgba8());
+    }
+    let n = thumbs.len() as u32;
+    let rows = n.div_ceil(cols);
+    let cell_h = thumbs.iter().map(|t| t.height()).max().unwrap();
+    let cw = cols * thumb_w + (cols + 1) * gap;
+    let ch = rows * cell_h + (rows + 1) * gap;
+    let mut canvas = RgbaImage::from_pixel(cw, ch, Rgba(bg));
+    for (i, t) in thumbs.iter().enumerate() {
+        let (c, r) = (i as u32 % cols, i as u32 / cols);
+        let x = gap + c * (thumb_w + gap);
+        let y = gap + r * (cell_h + gap);
+        imageops::overlay(&mut canvas, t, x as i64, y as i64);
+    }
+    encode_png(DynamicImage::ImageRgba8(canvas))
+}
+
 /// Scrub the macOS orange screen-recording dot from the top strip of a host capture: any orange-ish
 /// pixel in the first `strip` rows is replaced with `fill`. Device screenshots never have this dot;
 /// only host (`screencapture`) captures do.
@@ -134,6 +162,15 @@ mod tests {
         let src = solid(1080, 2400);
         let (_b, w, h) = export_store(&src, &PLAY).unwrap();
         assert_eq!((w, h), (1080, 2400)); // already within spec, unchanged
+    }
+
+    #[test]
+    fn contact_sheet_grid_dims() {
+        let imgs = vec![solid(100, 200), solid(100, 200), solid(100, 200)];
+        let sheet = contact_sheet(&imgs, 2, 100, 10, [0, 0, 0, 255]).unwrap();
+        let d = image::load_from_memory(&sheet).unwrap();
+        // 2 cols: width = 2*100 + 3*10 = 230; 2 rows (3 imgs): height = 2*200 + 3*10 = 430
+        assert_eq!((d.width(), d.height()), (230, 430));
     }
 
     #[test]

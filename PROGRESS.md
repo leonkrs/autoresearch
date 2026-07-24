@@ -105,3 +105,7 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   ~/.local/bin, in-place).
 - Proof: ran install to a temp bin dir; the **release** `scaena version` + `scaena devices` run from the
   symlinked binary. Packaged clean enough to sell (per the distribution decision).
+
+## Cycle 14 — contact sheet · gates 5/6
+- `contact_sheet` (image crate): tile N screenshots into a grid montage. CLI `scaena contact <png...>`.
+- Proof: unit test grid dims (2 cols, 3 imgs -> 230x430); live 3-capture sheet produced. Spec item done.

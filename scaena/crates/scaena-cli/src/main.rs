@@ -22,6 +22,7 @@ fn main() {
             if let Err(e) = serve::run(port) { eprintln!("serve failed: {e}"); std::process::exit(1); }
         }
         Some("tokens") => cmd_tokens(&args[1..]),
+        Some("contact") => cmd_contact(&args[1..]),
         Some("version") | Some("--version") | Some("-V") => println!("scaena {VERSION}"),
         _ => {
             eprintln!("scaena {VERSION}");
@@ -100,6 +101,27 @@ fn cmd_flow(args: &[String]) {
             }
         }
         Err(e) => { eprintln!("flow failed: {e}"); std::process::exit(1); }
+    }
+}
+
+fn cmd_contact(args: &[String]) {
+    let srcs = positionals(args);
+    if srcs.is_empty() {
+        eprintln!("usage: scaena contact <png...> [--cols N] [--out F]"); std::process::exit(2);
+    }
+    let cols: u32 = flag(args, "--cols").and_then(|s| s.parse().ok()).unwrap_or(3);
+    let out = flag(args, "--out").unwrap_or_else(|| "scaena-contact.png".into());
+    let mut imgs = Vec::new();
+    for s in &srcs {
+        match std::fs::read(s) { Ok(b) => imgs.push(b), Err(e) => eprintln!("skip {s}: {e}") }
+    }
+    match scaena_core::render::contact_sheet(&imgs, cols, 300, 16, [14, 13, 16, 255]) {
+        Ok(png) => {
+            let _ = std::fs::write(&out, &png);
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            println!("contact sheet ({} shots) -> {out} ({w}x{h})", imgs.len());
+        }
+        Err(e) => { eprintln!("contact failed: {e}"); std::process::exit(1); }
     }
 }
 
