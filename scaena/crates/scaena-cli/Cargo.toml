@@ -1,0 +1,13 @@
+[package]
+name = "scaena-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scaena command-line interface."
+
+[[bin]]
+name = "scaena"
+path = "src/main.rs"
+
+[dependencies]
+scaena-core = { path = "../scaena-core" }

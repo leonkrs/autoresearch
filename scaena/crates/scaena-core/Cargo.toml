@@ -1,0 +1,6 @@
+[package]
+name = "scaena-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scaena core: devices, capture, seed, flows, framing, export. Zero AI, zero network."
