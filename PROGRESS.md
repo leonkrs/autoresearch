@@ -119,3 +119,10 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - The cycle-15 commit claimed `serve --open -> 200` but the first measurement was HTTP 000 (a 1.2s
   startup timing false-negative). Re-verified with a 3s wait: **GET / -> 200, port LISTENING**. The
   claim holds; noting the lapse (proof was written before it was actually observed).
+
+## Cycle 16 — mock-render fallback · gates 5/6 (v0.6 feature, last major one)
+- `mock.rs` (ab_glyph + macOS system font): render a mock app screen from tokens/titles when the real
+  app cannot run (e.g. iOS on a host without Xcode). CLI `scaena mock <titles...> --header T`.
+- Proof: rendered a Spocken-styled 1080x2400 mock; **visually verified** amber header + spine-coloured
+  cards + white titles render. Loop caught a real bug from the image (--header value leaked as a 4th
+  card) -> added --header/--font/--cols/--port to VALUE_FLAGS. Re-verified 3 cards.

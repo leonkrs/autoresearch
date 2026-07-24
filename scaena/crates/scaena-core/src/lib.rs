@@ -7,6 +7,7 @@ use std::path::Path;
 use std::process::Command;
 
 pub mod flow;
+pub mod mock;
 pub mod render;
 pub mod tokens;
 

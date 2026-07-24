@@ -30,6 +30,7 @@ fn main() {
         }
         Some("tokens") => cmd_tokens(&args[1..]),
         Some("contact") => cmd_contact(&args[1..]),
+        Some("mock") => cmd_mock(&args[1..]),
         Some("version") | Some("--version") | Some("-V") => println!("scaena {VERSION}"),
         _ => {
             eprintln!("scaena {VERSION}");
@@ -108,6 +109,37 @@ fn cmd_flow(args: &[String]) {
             }
         }
         Err(e) => { eprintln!("flow failed: {e}"); std::process::exit(1); }
+    }
+}
+
+fn cmd_mock(args: &[String]) {
+    let titles = positionals(args);
+    if titles.is_empty() {
+        eprintln!("usage: scaena mock <card title...> [--header T] [--out F] [--font TTF]");
+        std::process::exit(2);
+    }
+    let header = flag(args, "--header").unwrap_or_else(|| "Today".into());
+    let out = flag(args, "--out").unwrap_or_else(|| "scaena-mock.png".into());
+    let font = match scaena_core::mock::load_font(flag(args, "--font").as_deref()) {
+        Ok(f) => f,
+        Err(e) => { eprintln!("{e}"); std::process::exit(1); }
+    };
+    // Spocken-ish palette; accents cycle per card.
+    let accents = [[235, 169, 72], [255, 90, 110], [111, 168, 220], [127, 200, 169], [139, 124, 246]];
+    let cards: Vec<scaena_core::mock::Card> = titles
+        .iter()
+        .enumerate()
+        .map(|(i, t)| scaena_core::mock::Card { title: (*t).clone(), accent: accents[i % accents.len()] })
+        .collect();
+    match scaena_core::mock::render_mock(
+        &header, &cards, [14, 13, 16], [25, 23, 28, 255], [245, 243, 239], [235, 169, 72], &font,
+    ) {
+        Ok(png) => {
+            let _ = std::fs::write(&out, &png);
+            let (w, h) = png_dimensions(&png).unwrap_or((0, 0));
+            println!("mock -> {out} ({w}x{h}, {} cards)", cards.len());
+        }
+        Err(e) => { eprintln!("mock failed: {e}"); std::process::exit(1); }
     }
 }
 
@@ -280,7 +312,8 @@ fn flag(args: &[String], name: &str) -> Option<String> {
     args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
 }
 
-const VALUE_FLAGS: &[&str] = &["--out", "--store", "--pad", "--radius", "--device"];
+const VALUE_FLAGS: &[&str] =
+    &["--out", "--store", "--pad", "--radius", "--device", "--header", "--font", "--cols", "--port"];
 
 /// Positional args, excluding flags AND the values that follow value-taking flags. Without this, a
 /// `--out DIR` value was mistaken for a positional input (it tried to read the output dir as a source).

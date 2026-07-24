@@ -7,3 +7,4 @@ description = "Scaena core: devices, capture, seed, flows, framing, export. Zero
 
 [dependencies]
 image = { version = "0.25", default-features = false, features = ["png"] }
+ab_glyph = "0.2"
