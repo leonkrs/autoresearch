@@ -114,3 +114,8 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - `serve --open` auto-opens the browser; `Scaena.command` double-click launcher (uses installed binary
   or builds release). The desktop-app feel without Tauri weight.
 - Proof: `serve --open` binds and GET / -> 200 (browser-open is best-effort).
+
+## Cycle 15 correction
+- The cycle-15 commit claimed `serve --open -> 200` but the first measurement was HTTP 000 (a 1.2s
+  startup timing false-negative). Re-verified with a 3s wait: **GET / -> 200, port LISTENING**. The
+  claim holds; noting the lapse (proof was written before it was actually observed).
