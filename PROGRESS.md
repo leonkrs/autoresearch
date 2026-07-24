@@ -90,3 +90,7 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Extended `scaena-mcp` from 6 to **10 tools**: added capture_host, frame, export, tokens.
 - Proof: piped session -> tools/list = 10; `tokens` tool on real Theme.kt -> 13 tokens (Amber #EBA948).
   The core goal "an agent drives the whole pipeline" is met end to end.
+
+## Cycle 11 — richer browser GUI · gates 5/6
+- `scaena serve`: /api/capture accepts `frame=1` -> capture wrapped in a device frame; UI checkbox.
+- Proof: `frame=0` -> 1080x2400; `frame=1` -> 1200x2520 framed, over localhost.

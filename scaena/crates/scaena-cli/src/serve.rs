@@ -2,6 +2,7 @@
 //! access). Hand-rolled HTTP/1.1 over std TcpListener (no web-framework dep). Serves a small UI plus a
 //! JSON/image API over scaena-core. Zero network of its own; adb talks to a local emulator socket.
 
+use scaena_core::render::frame_png;
 use scaena_core::{adb_path, all_devices, capture, Device};
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
@@ -40,7 +41,8 @@ fn handle(mut stream: TcpStream) -> io::Result<()> {
         ("GET", "/api/devices") => respond(&mut stream, 200, "application/json", devices_json().as_bytes()),
         ("GET", "/api/capture") | ("POST", "/api/capture") => {
             let device = query(target, "device");
-            match do_capture(device.as_deref()) {
+            let framed = query(target, "frame").as_deref() == Some("1");
+            match do_capture(device.as_deref(), framed) {
                 Ok(png) => respond(&mut stream, 200, "image/png", &png),
                 Err(e) => respond(&mut stream, 500, "text/plain", e.as_bytes()),
             }
@@ -89,7 +91,7 @@ fn devices_json() -> String {
     format!("[{}]", items.join(","))
 }
 
-fn do_capture(serial: Option<&str>) -> Result<Vec<u8>, String> {
+fn do_capture(serial: Option<&str>, framed: bool) -> Result<Vec<u8>, String> {
     let devices = all_devices();
     let device: Option<Device> = match serial {
         Some(s) => devices.into_iter().find(|d| d.serial == s),
@@ -97,7 +99,12 @@ fn do_capture(serial: Option<&str>) -> Result<Vec<u8>, String> {
     };
     let device = device.ok_or_else(|| "no ready device".to_string())?;
     let out = std::env::temp_dir().join(format!("scaena-serve-{}.png", device.serial));
-    capture(&device, &adb_path(), &out).map_err(|e| e.to_string())
+    let bytes = capture(&device, &adb_path(), &out).map_err(|e| e.to_string())?;
+    if framed {
+        frame_png(&bytes, 60, [14, 13, 16, 255], 44)
+    } else {
+        Ok(bytes)
+    }
 }
 
 const INDEX: &str = r#"<!doctype html><html><head><meta charset="utf-8">
@@ -121,6 +128,7 @@ const INDEX: &str = r#"<!doctype html><html><head><meta charset="utf-8">
  <h1>Scaena</h1><div class="sub">local app-screen studio</div>
  <label>Device</label>
  <select id="dev"></select>
+ <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;letter-spacing:0;font-size:13px;color:#f5f3ef"><input type="checkbox" id="frame" style="width:auto;margin:0"> Wrap in device frame</label>
  <button onclick="cap()">Capture screen</button>
  <div class="sub" id="status" style="margin-top:16px"></div>
 </aside>
@@ -135,7 +143,8 @@ async function load(){
 async function cap(){
  const dev=document.getElementById('dev').value;
  document.getElementById('status').textContent='capturing…';
- const url='/api/capture?device='+encodeURIComponent(dev)+'&t='+Date.now();
+ const fr=document.getElementById('frame').checked?'1':'0';
+ const url='/api/capture?device='+encodeURIComponent(dev)+'&frame='+fr+'&t='+Date.now();
  const r=await fetch(url);
  if(!r.ok){document.getElementById('status').textContent='error: '+await r.text();return;}
  const blob=await r.blob();const u=URL.createObjectURL(blob);

@@ -10,3 +10,4 @@ cycle	ts	slice	gate	gates_passed	kept	proof
 8	2026-07-24	host capture + orange-dot scrub (G2 closed)	G2	5	yes	scaena capture --host: screencapture -x + scrub_orange_dot; live host PNG produced; unit test scrubs orange in strip only. G2 fully closed
 9	2026-07-24	token import (Theme.kt / CSS)	v0.6	5	yes	scaena tokens parses real Spocken Theme.kt -> Amber #EBA948, Ink #0E0D10, etc; 14 unit tests (kotlin ARGB-drop, css vars). Feeds mock-render + framing in brand colors
 10	2026-07-24	MCP full toolset (10 tools)	G4+	5	yes	MCP now exposes devices/capture/seed/snapshot/restore/flow/capture_host/frame/export/tokens; verified via piped session; tokens tool -> 13 real Spocken tokens. Agents get the whole pipeline
+11	2026-07-24	richer web GUI (frame toggle)	G6+	5	yes	scaena serve /api/capture?frame=1 returns framed (larger) PNG; browser UI has a frame checkbox. Browser GUI now does capture+frame
