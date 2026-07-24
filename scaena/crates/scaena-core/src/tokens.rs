@@ -31,7 +31,8 @@ pub fn from_kotlin(text: &str) -> Vec<Token> {
 /// Parse CSS custom properties: `--accent: #eba948;` -> Token{accent, #EBA948}.
 pub fn from_css(text: &str) -> Vec<Token> {
     let mut out = Vec::new();
-    for raw in text.split([';', '\n']) {
+    // Split on `{`/`}` too, so the first var in `:root{ --accent` starts its own segment.
+    for raw in text.split([';', '\n', '{', '}']) {
         let l = raw.trim();
         let Some(rest) = l.strip_prefix("--") else { continue };
         let Some(colon) = rest.find(':') else { continue };

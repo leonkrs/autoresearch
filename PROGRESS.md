@@ -150,3 +150,9 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   (`.github/workflows/scaena-ci.yml`): `cargo test` + `cargo clippy -D warnings` on push to `scaena`.
 - The unit tests are hermetic (parsers, image ops, tokens) so CI needs no device. Proof: clippy 0,
   tests green, workflow YAML valid.
+
+## Cycle 22 — fix css parser bug caught by CI · gates 5/6
+- **Honesty + loop working:** cycle-21 CI failed on GitHub (`css_vars`), a bug my local `grep "ok"`
+  masked across the 3 test binaries. Root cause: `from_css` only split on `;`/newline, so the first
+  `--var` in `:root{ ...` was dropped. Fix: also split on `{`/`}`.
+- Proof: full `cargo test` (checked for FAILED, not just grep) = **16 passed, 0 failed**. Re-verifying CI.
