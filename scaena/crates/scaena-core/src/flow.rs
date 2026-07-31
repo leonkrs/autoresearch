@@ -111,10 +111,15 @@ pub enum Step {
     Tap { x: u32, y: u32 },
     Key { code: String },
     Deeplink { url: String },
+    Restore { pkg: String, tar: String },
+    Snapshot { pkg: String, out: String },
 }
 
 /// Parse a flow file (line DSL). `#` comments and blank lines ignored. Verbs:
-/// `launch <pkg> <activity>` · `stop [pkg]` · `seed <rel> <hostfile>` · `wait <ms>` · `capture <name>`.
+/// `launch <pkg> <activity>` · `stop [pkg]` · `seed <rel> <hostfile>` · `wait <ms>` · `capture <name>` ·
+/// `tap <x> <y>` · `key <keycode>` · `deeplink <url>` · `restore <pkg> <tar>` · `snapshot <pkg> <out>`.
+/// `restore`/`snapshot` are the session-replay verbs: restore a signed-in state captured once by a human,
+/// launch, capture the screen behind the wall — without ever authenticating.
 pub fn parse_flow(text: &str) -> Result<Vec<Step>, String> {
     let mut steps = Vec::new();
     for (i, raw) in text.lines().enumerate() {
@@ -148,6 +153,14 @@ pub fn parse_flow(text: &str) -> Result<Vec<Step>, String> {
             },
             "key" => Step::Key { code: a.first().ok_or_else(|| err("key <keycode>"))?.to_string() },
             "deeplink" => Step::Deeplink { url: a.first().ok_or_else(|| err("deeplink <url>"))?.to_string() },
+            "restore" => Step::Restore {
+                pkg: a.first().ok_or_else(|| err("restore <pkg> <tar>"))?.to_string(),
+                tar: a.get(1).ok_or_else(|| err("restore <pkg> <tar>"))?.to_string(),
+            },
+            "snapshot" => Step::Snapshot {
+                pkg: a.first().ok_or_else(|| err("snapshot <pkg> <out>"))?.to_string(),
+                out: a.get(1).ok_or_else(|| err("snapshot <pkg> <out>"))?.to_string(),
+            },
             other => return Err(err(&format!("unknown verb '{other}'"))),
         };
         steps.push(step);
@@ -198,6 +211,13 @@ pub fn run_flow(
                 capture(device, adb, &out)?;
                 shots.push(out);
             }
+            Step::Restore { pkg, tar } => {
+                cur_pkg = pkg.clone();
+                restore(adb, serial, pkg, &base_dir.join(tar))?;
+            }
+            Step::Snapshot { pkg, out } => {
+                snapshot(adb, serial, pkg, &base_dir.join(out))?;
+            }
         }
     }
     Ok(shots)
@@ -226,6 +246,15 @@ mod tests {
         assert_eq!(steps[2], Step::Seed { rel: "data.json".into(), src: "fixt.json".into() });
         assert_eq!(steps[3], Step::Capture { name: "home".into() });
         assert_eq!(steps[4], Step::Stop { pkg: "".into() });
+    }
+
+    #[test]
+    fn parses_session_replay_verbs() {
+        let s = parse_flow("restore com.x.y sess.tar\nlaunch com.x.y com.x.y.Main\ncapture home\nsnapshot com.x.y out.tar\n").unwrap();
+        assert_eq!(s[0], Step::Restore { pkg: "com.x.y".into(), tar: "sess.tar".into() });
+        assert_eq!(s[3], Step::Snapshot { pkg: "com.x.y".into(), out: "out.tar".into() });
+        assert!(parse_flow("restore com.x.y").is_err());
+        assert!(parse_flow("snapshot com.x.y").is_err());
     }
 
     #[test]

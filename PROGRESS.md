@@ -182,3 +182,12 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
 - Proof: piped MCP call -> snapshot 14336B; tar contains `firebase.auth.api.Store`. cargo check green.
   Note: full test suite not re-run this cycle (timed out under machine load; unchanged from green
   cycle-25 + green CI). CI on push will confirm.
+
+## Cycle 27 — session-replay as a flow verb · gates 6/6
+- The flow DSL gains two verbs: `restore <pkg> <tar>` and `snapshot <pkg> <out>`. The auth-wall
+  differentiator is now a single reproducible file (`flows/session-replay.flow`): restore a signed-in
+  state a human captured once, launch, capture the screen behind the wall — Scaena never authenticates.
+- `Step::Restore`/`Step::Snapshot` added to the enum, parser, and `run_flow` (calls the already-proven
+  `restore`/`snapshot` core fns; `restore` sets `cur_pkg` so a following `launch` needs no re-declare).
+- Proof: 17/17 core tests pass incl. new `parses_session_replay_verbs`; `flow flows/session-replay.flow
+  --dry` prints all 5 steps correctly; `clippy -D warnings` clean on core + cli.

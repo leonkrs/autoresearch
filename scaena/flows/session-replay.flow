@@ -1,0 +1,11 @@
+# Scaena flow — session replay. The differentiator, as one reproducible file.
+# A human signs in ONCE and captures the state with `scaena snapshot --full`. From then on this flow
+# restores that signed-in state and captures the screen behind the auth wall. Scaena never authenticates.
+#
+# Prerequisite: session.tar next to this file, produced once by:
+#   scaena snapshot com.spocken.app session.tar --full
+restore  com.spocken.app session.tar
+launch   com.spocken.app com.made.murmur.MainActivity
+wait     8000
+capture  behind-the-wall
+stop     com.spocken.app
