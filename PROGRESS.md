@@ -191,3 +191,13 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   `restore`/`snapshot` core fns; `restore` sets `cur_pkg` so a following `launch` needs no re-declare).
 - Proof: 17/17 core tests pass incl. new `parses_session_replay_verbs`; `flow flows/session-replay.flow
   --dry` prints all 5 steps correctly; `clippy -D warnings` clean on core + cli.
+
+## Cycle 28 — session-replay verified LIVE on device · gates 6/6
+- Ran the session-replay flow for real on `emulator-5554`: restore a signed-in `--full` tar -> launch ->
+  capture. Output `behind-the-wall.png` is 1080x2400 with grayscale mean=0.58, stddev=0.165, range
+  0.013..1 — a real rendered UI (Spocken's light home), not a black cold-start frame. Scaena never
+  authenticated. Personal tar + capture stayed in /tmp, never committed.
+- Fixed a footgun found while running it: `scaena snapshot` accepted the out path only via `--out`, so a
+  positional path was silently ignored (wrote to `<pkg>.snapshot.tar` instead). It now takes a positional
+  `<out>` like `restore` and the `snapshot` flow verb — one signature across CLI and DSL. `--out` kept.
+- `clippy -D warnings` clean on cli; core tests unchanged (green).

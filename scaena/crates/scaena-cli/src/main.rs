@@ -48,13 +48,18 @@ fn main() {
 }
 
 fn cmd_snapshot(args: &[String]) {
-    let Some(pkg) = args.first().filter(|a| !a.starts_with("--")) else {
-        eprintln!("usage: scaena snapshot <pkg> [--out F]"); std::process::exit(2);
+    let pos: Vec<&String> = args.iter().filter(|a| !a.starts_with("--")).collect();
+    let Some(pkg) = pos.first() else {
+        eprintln!("usage: scaena snapshot <pkg> [<out>] [--out F] [--full]"); std::process::exit(2);
     };
     let Some(device) = pick_device(flag(args, "--device").as_deref()) else {
         eprintln!("no ready device (try: scaena devices)"); std::process::exit(1);
     };
-    let out = flag(args, "--out").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(format!("{pkg}.snapshot.tar")));
+    // Out path: positional (like `restore`, matching the `snapshot <pkg> <out>` flow verb) or --out,
+    // else default. Positional wins so the CLI and the flow DSL share one signature.
+    let out = pos.get(1).map(|p| PathBuf::from(p.as_str()))
+        .or_else(|| flag(args, "--out").map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from(format!("{pkg}.snapshot.tar")));
     let full = args.iter().any(|a| a == "--full");
     let res = if full {
         scaena_core::flow::snapshot_dirs(&adb_path(), &device.serial, pkg, &out, &["files", "shared_prefs", "databases"])
