@@ -2,10 +2,12 @@
 //! access). Hand-rolled HTTP/1.1 over std TcpListener (no web-framework dep). Serves a small UI plus a
 //! JSON/image API over scaena-core. Zero network of its own; adb talks to a local emulator socket.
 
+use scaena_core::flow::{parse_flow, run_flow};
 use scaena_core::render::frame_png;
 use scaena_core::{adb_path, all_devices, capture, Device};
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
+use std::path::PathBuf;
 
 pub fn run(port: u16) -> io::Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
@@ -51,6 +53,15 @@ fn handle(mut stream: TcpStream) -> io::Result<()> {
             let header = query(target, "header").unwrap_or_else(|| "Today".into());
             let titles = query(target, "titles").unwrap_or_default();
             match do_mock(&header, &titles) {
+                Ok(png) => respond(&mut stream, 200, "image/png", &png),
+                Err(e) => respond(&mut stream, 500, "text/plain", e.as_bytes()),
+            }
+        }
+        ("GET", "/api/flows") => respond(&mut stream, 200, "application/json", flows_json().as_bytes()),
+        ("GET", "/api/run-flow") | ("POST", "/api/run-flow") => {
+            let file = query(target, "file").unwrap_or_default();
+            let device = query(target, "device");
+            match do_run_flow(&file, device.as_deref()) {
                 Ok(png) => respond(&mut stream, 200, "image/png", &png),
                 Err(e) => respond(&mut stream, 500, "text/plain", e.as_bytes()),
             }
@@ -112,6 +123,58 @@ fn do_mock(header: &str, titles_pipe: &str) -> Result<Vec<u8>, String> {
     scaena_core::mock::render_mock(header, &cards, [14, 13, 16], [25, 23, 28, 255], [245, 243, 239], [235, 169, 72], &font)
 }
 
+/// Where the GUI looks for flow files: `./flows` relative to where `scaena serve` was launched.
+fn flows_dir() -> PathBuf {
+    std::env::current_dir().unwrap_or_default().join("flows")
+}
+
+/// List `*.flow` files in `flows_dir` with their parsed step count. Sorted by name for a stable UI.
+fn flows_json() -> String {
+    let mut items: Vec<String> = Vec::new();
+    if let Ok(rd) = std::fs::read_dir(flows_dir()) {
+        for e in rd.flatten() {
+            let p = e.path();
+            if p.extension().and_then(|x| x.to_str()) != Some("flow") {
+                continue;
+            }
+            let Some(name) = p.file_name().and_then(|x| x.to_str()) else { continue };
+            let steps = std::fs::read_to_string(&p)
+                .ok()
+                .and_then(|t| parse_flow(&t).ok())
+                .map(|s| s.len())
+                .unwrap_or(0);
+            items.push(format!(r#"{{"name":"{name}","steps":{steps}}}"#));
+        }
+    }
+    items.sort();
+    format!("[{}]", items.join(","))
+}
+
+/// Run a named flow from `flows_dir` on the chosen device and return its last capture as PNG bytes.
+/// `file` must be a bare filename (no path separators, no `..`) so the GUI cannot read outside `flows/`.
+fn do_run_flow(file: &str, serial: Option<&str>) -> Result<Vec<u8>, String> {
+    if file.is_empty() || file.contains('/') || file.contains('\\') || file.contains("..") {
+        return Err("bad flow name".into());
+    }
+    let dir = flows_dir();
+    let path = dir.join(file);
+    if !path.exists() {
+        return Err(format!("flow not found: {file}"));
+    }
+    let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let steps = parse_flow(&text)?;
+    let devices = all_devices();
+    let device = match serial {
+        Some(s) => devices.into_iter().find(|d| d.serial == s),
+        None => devices.into_iter().find(Device::is_ready),
+    }
+    .ok_or_else(|| "no ready device".to_string())?;
+    let out_dir = std::env::temp_dir().join("scaena-serve-flow");
+    let shots = run_flow(&adb_path(), &device, &steps, &dir, &out_dir).map_err(|e| e.to_string())?;
+    let last = shots.last().ok_or_else(|| "flow ran but produced no capture step".to_string())?;
+    std::fs::read(last).map_err(|e| e.to_string())
+}
+
 fn do_capture(serial: Option<&str>, framed: bool) -> Result<Vec<u8>, String> {
     let devices = all_devices();
     let device: Option<Device> = match serial {
@@ -151,6 +214,10 @@ const INDEX: &str = r#"<!doctype html><html><head><meta charset="utf-8">
  <select id="dev"></select>
  <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;letter-spacing:0;font-size:13px;color:#f5f3ef"><input type="checkbox" id="frame" style="width:auto;margin:0"> Wrap in device frame</label>
  <button onclick="cap()">Capture screen</button>
+ <label style="margin-top:22px;display:block">Flow</label>
+ <select id="flow"></select>
+ <button onclick="runFlow()">Run flow</button>
+ <div class="sub" style="margin-top:6px">Flows drive the app and can restore a signed-in state, no login.</div>
  <div class="sub" id="status" style="margin-top:16px"></div>
 </aside>
 <main><div id="stage"><div class="empty">Pick a device and capture.</div></div></main>
@@ -158,8 +225,24 @@ const INDEX: &str = r#"<!doctype html><html><head><meta charset="utf-8">
 async function load(){
  const r=await fetch('/api/devices');const ds=await r.json();
  const s=document.getElementById('dev');s.innerHTML='';
- if(!ds.length){s.innerHTML='<option>no devices</option>';return;}
- ds.forEach(d=>{const o=document.createElement('option');o.value=d.serial;o.textContent=d.platform+' · '+d.serial+(d.ready?'':' ('+d.state+')');s.appendChild(o);});
+ if(!ds.length){s.innerHTML='<option>no devices</option>';}
+ else ds.forEach(d=>{const o=document.createElement('option');o.value=d.serial;o.textContent=d.platform+' · '+d.serial+(d.ready?'':' ('+d.state+')');s.appendChild(o);});
+ const fr=await fetch('/api/flows');const fs=await fr.json();
+ const f=document.getElementById('flow');f.innerHTML='';
+ if(!fs.length){f.innerHTML='<option value="">no flows</option>';}
+ else fs.forEach(x=>{const o=document.createElement('option');o.value=x.name;o.textContent=x.name+' ('+x.steps+' steps)';f.appendChild(o);});
+}
+async function runFlow(){
+ const dev=document.getElementById('dev').value;
+ const file=document.getElementById('flow').value;
+ if(!file){document.getElementById('status').textContent='no flow selected';return;}
+ document.getElementById('status').textContent='running '+file+'…';
+ const url='/api/run-flow?file='+encodeURIComponent(file)+'&device='+encodeURIComponent(dev)+'&t='+Date.now();
+ const r=await fetch(url,{method:'POST'});
+ if(!r.ok){document.getElementById('status').textContent='error: '+await r.text();return;}
+ const blob=await r.blob();const u=URL.createObjectURL(blob);
+ document.getElementById('stage').innerHTML='<div class="frame"><img src="'+u+'"></div>';
+ document.getElementById('status').textContent='flow '+file+' done '+new Date().toLocaleTimeString();
 }
 async function cap(){
  const dev=document.getElementById('dev').value;

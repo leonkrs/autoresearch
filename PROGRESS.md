@@ -211,3 +211,15 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   global no-em-dash ban.
 - `clippy -D warnings` clean on all three crates; 4/4 flow tests green. Edits are comments/strings/docs
   only, so the full 17-test suite is unchanged from cycle 27.
+
+## Cycle 30 — GUI parity: the browser studio runs flows · gates 6/6
+- `scaena serve` (the human consumer) gains two endpoints: `/api/flows` lists `*.flow` files in `./flows`
+  with their step counts, and `/api/run-flow?file=&device=` parses and runs one on the chosen device and
+  returns the last capture. A Flows dropdown + Run flow button now sit in the sidebar. `file` is a bare
+  filename only (no `/`, `\`, or `..`), so the GUI cannot read outside `flows/`.
+- Live-verified on `emulator-5554`: `GET /` -> 200; `/api/flows` -> lists 4 flows incl.
+  `session-replay.flow` (5 steps); `file=../Cargo.toml` -> 500 "bad flow name"; a benign Settings-app
+  flow -> 200 with a real 1080x2400 PNG (grayscale mean 0.73). A browser screenshot shows the populated
+  Flow dropdown and Run flow button.
+- Session-replay is now reachable from all three consumers: CLI, MCP, and the browser GUI.
+  `clippy -D warnings` clean.
