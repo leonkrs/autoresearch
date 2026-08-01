@@ -162,6 +162,13 @@ fn cmd_doctor() {
     let font = scaena_core::mock::load_font(None).is_ok();
     check("mock font", font, if font { "system font found" } else { "no .ttf (mock text disabled)" });
 
+    // The `serve` GUI reads flows from ./flows relative to the cwd; report what is here so an empty Flows
+    // panel (from running elsewhere) is easy to diagnose.
+    let flows = std::fs::read_dir("flows")
+        .map(|rd| rd.flatten().filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("flow")).count())
+        .unwrap_or(0);
+    check("flows", flows > 0, &format!("{flows} .flow file(s) in ./flows"));
+
     let path = std::env::var("PATH").unwrap_or_default();
     let home = std::env::var("HOME").unwrap_or_default();
     let on_path = path.split(':').any(|p| p == format!("{home}/.local/bin"));

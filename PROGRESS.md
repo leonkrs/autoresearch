@@ -246,3 +246,9 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   16px gaps), a 1-capture flow returns the single 1080x2400. `clippy -D warnings` clean.
 - Verify caught a stale-binary false result first (the run used the cycle-32 binary until an explicit
   `cargo build`); logged rather than hidden.
+
+## Cycle 34 — doctor reports ./flows readiness · gates 6/6
+- `scaena doctor` gains a `flows` line counting `*.flow` in `./flows`, the cwd the `serve` GUI reads. An
+  empty Flows panel (from running `serve` outside the repo) now has an obvious diagnosis.
+- Verified both ways: from the repo root, `[ok] 4 .flow file(s)`; from `/tmp`, `[--] 0`. `clippy -D
+  warnings` clean.
