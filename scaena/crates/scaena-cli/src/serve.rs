@@ -225,34 +225,63 @@ fn do_capture(serial: Option<&str>, framed: bool) -> Result<Vec<u8>, String> {
 const INDEX: &str = r#"<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Scaena</title>
 <style>
- *{box-sizing:border-box;margin:0;font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif}
- body{background:#0e0d10;color:#f5f3ef;display:flex;height:100vh}
- aside{width:280px;padding:20px;border-right:1px solid #2e2a32;background:#131117}
- h1{font-size:18px;color:#eba948;margin-bottom:2px}
- .sub{font-size:12px;color:#9a938c;margin-bottom:20px}
- label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#9a938c}
- select,button{width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid #2e2a32;background:#19171c;color:#f5f3ef;font-size:14px}
- button{background:#eba948;color:#211703;font-weight:600;border:0;cursor:pointer;margin-top:14px}
- button:hover{filter:brightness(1.05)}
- main{flex:1;display:flex;align-items:center;justify-content:center;padding:30px;overflow:auto}
- .frame{border-radius:36px;background:#000;padding:10px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
- img{max-height:78vh;border-radius:28px;display:block}
- .empty{color:#9a938c;font-size:14px}
+ :root{--pit:#0b0b0f;--velvet:#131019;--sink:#0f0c15;--gild:#c9a227;--gildlit:#e6c454;--limelight:#f6e7c1;--chalk:#ece7de;--dim:#8a8496;--line:#2a2431}
+ *{box-sizing:border-box;margin:0}
+ html,body{height:100%}
+ body{background:var(--pit);color:var(--chalk);display:flex;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px}
+ .booth{width:300px;flex:none;display:flex;flex-direction:column;padding:26px 22px;background:linear-gradient(180deg,var(--velvet),var(--pit));border-right:1px solid var(--line)}
+ .mark{font-family:"Bodoni 72","Didot",Georgia,serif;font-size:31px;font-weight:600;letter-spacing:.22em;color:var(--chalk);padding-left:.22em}
+ .tag{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-top:7px}
+ .rule{height:1px;background:linear-gradient(90deg,var(--gild),transparent);opacity:.55;margin:22px 0 16px}
+ .cue{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gild);margin-bottom:9px}
+ select{width:100%;font:inherit;font-size:13px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--sink);color:var(--chalk)}
+ .check{display:flex;align-items:center;gap:9px;margin-top:11px;font-size:12px;color:var(--chalk);cursor:pointer}
+ .check input{accent-color:var(--gild);width:15px;height:15px;margin:0}
+ .btn{width:100%;margin-top:13px;font:inherit;font-size:13px;font-weight:600;letter-spacing:.02em;padding:11px 12px;border:0;border-radius:8px;background:var(--gild);color:#20180a;cursor:pointer;transition:filter .15s}
+ .btn:hover{filter:brightness(1.08)}
+ .btn.ghost{background:transparent;color:var(--gild);border:1px solid var(--gild)}
+ .btn.ghost:hover{filter:none;background:rgba(201,162,39,.12)}
+ .btn:focus-visible,select:focus-visible,.check input:focus-visible{outline:2px solid var(--gildlit);outline-offset:2px}
+ .hint{font-size:11px;line-height:1.55;color:var(--dim);margin-top:9px}
+ .status{font-size:11px;line-height:1.5;color:var(--limelight);margin-top:auto;padding-top:18px;min-height:16px}
+ .house{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:44px;overflow:auto}
+ .house::before{content:"";position:absolute;inset:0;background:radial-gradient(58% 52% at 50% 40%,rgba(246,231,193,.10),transparent 72%);pointer-events:none}
+ .perform{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center}
+ .perform img{max-height:76vh;max-width:100%;border-radius:10px;display:block;box-shadow:0 26px 74px rgba(0,0,0,.62);animation:rise .5s ease}
+ .foot{width:62%;max-width:340px;height:2px;margin-top:15px;background:linear-gradient(90deg,transparent,var(--gild),transparent);opacity:.75}
+ .empty{max-width:300px;text-align:center;color:var(--dim);font-size:12px;line-height:1.65}
+ .empty b{display:block;font-family:"Bodoni 72","Didot",Georgia,serif;font-weight:500;font-size:21px;letter-spacing:.03em;color:var(--chalk);margin-bottom:9px}
+ @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+ @media(prefers-reduced-motion:reduce){.perform img{animation:none}}
+ @media(max-width:720px){body{flex-direction:column}.booth{width:100%;border-right:0;border-bottom:1px solid var(--line)}.house{padding:26px}}
 </style></head><body>
-<aside>
- <h1>Scaena</h1><div class="sub">local app-screen studio</div>
- <label>Device</label>
- <select id="dev"></select>
- <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;letter-spacing:0;font-size:13px;color:#f5f3ef"><input type="checkbox" id="frame" style="width:auto;margin:0"> Wrap in device frame</label>
- <button onclick="cap()">Capture screen</button>
- <label style="margin-top:22px;display:block">Flow</label>
- <select id="flow"></select>
- <button onclick="runFlow()">Run flow</button>
- <div class="sub" style="margin-top:6px">Flows drive the app and can restore a signed-in state, no login.</div>
- <div class="sub" id="status" style="margin-top:16px"></div>
-</aside>
-<main><div id="stage"><div class="empty">Pick a device and capture.</div></div></main>
+<div class="booth">
+ <div class="mark">SCAENA</div><div class="tag">local app-screen studio</div>
+ <div class="rule"></div>
+ <div class="cue" id="cue-dev">Device</div>
+ <select id="dev" aria-labelledby="cue-dev"></select>
+ <label class="check"><input type="checkbox" id="frame"> Wrap in device frame</label>
+ <button class="btn" onclick="cap()">Capture screen</button>
+ <div class="rule"></div>
+ <div class="cue" id="cue-flow">Flow</div>
+ <select id="flow" aria-labelledby="cue-flow"></select>
+ <button class="btn ghost" onclick="runFlow()">Run flow</button>
+ <div class="hint">Flows drive the app and can restore a signed-in state, no login.</div>
+ <div class="status" id="status" aria-live="polite"></div>
+</div>
+<div class="house"><div class="perform" id="stage"><div class="empty"><b>The stage is empty.</b>Pick a device and capture its screen.</div></div></div>
 <script>
+// Render a captured screen on the stage. Built with DOM nodes (not innerHTML) so the blob URL is never
+// parsed as markup; the previous blob is revoked first so object URLs do not pile up over a session.
+function showShot(u){
+ const stage=document.getElementById('stage');
+ const prev=stage.querySelector('img');
+ if(prev&&prev.src.startsWith('blob:'))URL.revokeObjectURL(prev.src);
+ stage.replaceChildren();
+ const img=document.createElement('img');img.src=u;img.alt='captured screen';
+ const foot=document.createElement('div');foot.className='foot';
+ stage.append(img,foot);
+}
 async function load(){
  const r=await fetch('/api/devices');const ds=await r.json();
  const s=document.getElementById('dev');s.innerHTML='';
@@ -273,7 +302,7 @@ async function runFlow(){
  const r=await fetch(url,{method:'POST'});
  if(!r.ok){document.getElementById('status').textContent='error: '+await r.text();return;}
  const blob=await r.blob();const u=URL.createObjectURL(blob);
- document.getElementById('stage').innerHTML='<div class="frame"><img src="'+u+'"></div>';
+ showShot(u);
  document.getElementById('status').textContent='flow '+file+' done '+new Date().toLocaleTimeString();
 }
 async function cap(){
@@ -284,7 +313,7 @@ async function cap(){
  const r=await fetch(url);
  if(!r.ok){document.getElementById('status').textContent='error: '+await r.text();return;}
  const blob=await r.blob();const u=URL.createObjectURL(blob);
- document.getElementById('stage').innerHTML='<div class="frame"><img src="'+u+'"></div>';
+ showShot(u);
  document.getElementById('status').textContent='captured '+new Date().toLocaleTimeString();
 }
 load();
