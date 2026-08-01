@@ -237,3 +237,12 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   paths.
 - Live-verified: a framed Settings-app flow returns a 1200x2520 PNG (1080x2400 plus the 60px pad on each
   side), versus the raw 1080x2400. `clippy -D warnings` clean; 3 cli tests green.
+
+## Cycle 33 — GUI run-flow returns a contact sheet for multi-capture flows · gates 6/6
+- A flow with more than one capture (a before/after like `spocken.flow`'s gate + after-seed) now returns
+  a contact sheet of all the shots via `scaena_core::render::contact_sheet` (cols = min(n, 3)); a single
+  capture still returns the one image, framed on request.
+- Live-verified on `emulator-5554`: a 2-capture flow returns a 768x832 sheet (two columns, 360px thumbs +
+  16px gaps), a 1-capture flow returns the single 1080x2400. `clippy -D warnings` clean.
+- Verify caught a stale-binary false result first (the run used the cycle-32 binary until an explicit
+  `cargo build`); logged rather than hidden.

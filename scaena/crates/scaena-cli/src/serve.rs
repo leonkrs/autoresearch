@@ -184,8 +184,21 @@ fn do_run_flow(file: &str, serial: Option<&str>, framed: bool) -> Result<Vec<u8>
     .ok_or_else(|| "no ready device".to_string())?;
     let out_dir = std::env::temp_dir().join("scaena-serve-flow");
     let shots = run_flow(&adb_path(), &device, &steps, &dir, &out_dir).map_err(|e| e.to_string())?;
-    let last = shots.last().ok_or_else(|| "flow ran but produced no capture step".to_string())?;
-    let bytes = std::fs::read(last).map_err(|e| e.to_string())?;
+    if shots.is_empty() {
+        return Err("flow ran but produced no capture step".into());
+    }
+    // A flow's value is often its before/after: with more than one capture, return a contact sheet of
+    // them all. A single capture returns as-is (framed on request). frame_png takes one image, so it
+    // does not apply to the multi-capture sheet.
+    if shots.len() > 1 {
+        let images: Vec<Vec<u8>> = shots
+            .iter()
+            .map(|p| std::fs::read(p).map_err(|e| e.to_string()))
+            .collect::<Result<_, _>>()?;
+        let cols = (shots.len() as u32).min(3);
+        return scaena_core::render::contact_sheet(&images, cols, 360, 16, [14, 13, 16, 255]);
+    }
+    let bytes = std::fs::read(&shots[0]).map_err(|e| e.to_string())?;
     if framed {
         frame_png(&bytes, 60, [14, 13, 16, 255], 44)
     } else {
