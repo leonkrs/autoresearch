@@ -1,6 +1,6 @@
 //! Mock-render fallback: draw a mock app screen from brand tokens when the real app cannot run (e.g.
 //! iOS on a host without Xcode, or a design mock). Pure local raster (image + ab_glyph), zero network.
-//! Not a pixel-perfect renderer — a clean, branded placeholder in the Calamus/Spocken card idiom.
+//! Not a pixel-perfect renderer, just a clean branded placeholder in the Calamus/Spocken card idiom.
 
 use ab_glyph::{Font, FontVec, Glyph, Point, PxScale, ScaleFont};
 use image::{imageops, DynamicImage, ImageFormat, Rgba, RgbaImage};

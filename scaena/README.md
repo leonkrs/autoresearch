@@ -2,13 +2,13 @@
 
 A local, offline, no-login **app-screen studio**. One Rust core, used from a **CLI**, an **MCP server**
 (for AI agents), and a **browser GUI**. It captures, seeds, frames and exports app screens
-reproducibly — including screens **behind an auth wall**, by seeding app state instead of signing in.
+reproducibly, including screens **behind an auth wall**, by seeding app state instead of signing in.
 
 Zero AI, zero keys, zero network of its own. `adb` talks to a local emulator; nothing leaves the machine.
 
 ![Scaena demo](docs/demo.png)
 
-*(The image above was produced entirely by Scaena — `mock` + `frame` + `contact` — dogfooding the pipeline.)*
+*(The image above was produced entirely by Scaena: `mock` + `frame` + `contact`, dogfooding the pipeline.)*
 
 ## Why
 
@@ -50,6 +50,8 @@ seed     store.json  fixtures/notes.json    # write app-private files via run-as
 tap      540 400
 key      KEYCODE_BACK
 deeplink myapp://home
+restore  com.x.app signed-in.tar           # replay a captured signed-in state (no sign-in)
+snapshot com.x.app out.tar                  # record the current app state
 capture  home
 stop
 ```
@@ -59,9 +61,24 @@ stop
 For a screen behind a login, Scaena never authenticates. Instead: **you sign in once**, then
 
 ```sh
-scaena snapshot com.x.app --out signed-in.tar   # record the signed-in app state
+scaena snapshot com.x.app signed-in.tar --full  # record the signed-in state (files + prefs + db)
 scaena restore com.x.app signed-in.tar          # replay it forever, no sign-in
 ```
+
+`--full` also captures `shared_prefs` and `databases`, which is where the auth session lives (for a
+Firebase app, `shared_prefs/com.google.firebase.auth.api.Store`). `restore` and `snapshot` are also flow
+verbs, so the whole replay is one reproducible file, [`flows/session-replay.flow`](flows/session-replay.flow):
+
+```
+restore  com.x.app signed-in.tar
+launch   com.x.app com.x.app.MainActivity
+wait     8000
+capture  behind-the-wall
+stop
+```
+
+Verified live on a device: restore a signed-in tar, launch, capture. The output is the real screen behind
+the wall, and Scaena signs in at no point.
 
 ## MCP (for agents)
 
@@ -71,8 +88,8 @@ inline. See [MCP.md](MCP.md) to register it in Claude Code.
 
 ## Layout
 
-- `crates/scaena-core` — the engine (devices, capture, flow, snapshot, render, tokens). Thin deps only.
-- `crates/scaena-cli` — the `scaena` binary + the `serve` browser GUI.
-- `crates/scaena-mcp` — the MCP server.
+- `crates/scaena-core`: the engine (devices, capture, flow, snapshot, render, tokens). Thin deps only.
+- `crates/scaena-cli`: the `scaena` binary + the `serve` browser GUI.
+- `crates/scaena-mcp`: the MCP server.
 
 Built with the autoresearch loop (`../program.md`); progress in `../results.tsv` and `../PROGRESS.md`.

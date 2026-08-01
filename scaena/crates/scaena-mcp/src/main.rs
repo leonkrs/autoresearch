@@ -1,6 +1,6 @@
 //! Scaena MCP server over stdio (newline-delimited JSON-RPC 2.0). Pure Rust, single binary, no Node.
 //! Exposes Scaena's capabilities so an agent can list devices, capture screens, seed state, run flows,
-//! and snapshot/restore — the same core the CLI and GUI use. Zero AI, zero network of its own.
+//! and snapshot/restore, the same core the CLI and GUI use. Zero AI, zero network of its own.
 
 use scaena_core::flow::{parse_flow, restore, run_flow, snapshot, snapshot_dirs};
 use scaena_core::render::{export_store, frame_png, preset, scrub_orange_dot};

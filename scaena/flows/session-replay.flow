@@ -1,4 +1,4 @@
-# Scaena flow — session replay. The differentiator, as one reproducible file.
+# Scaena flow: session replay. The differentiator, as one reproducible file.
 # A human signs in ONCE and captures the state with `scaena snapshot --full`. From then on this flow
 # restores that signed-in state and captures the screen behind the auth wall. Scaena never authenticates.
 #

@@ -66,7 +66,7 @@ pub fn preset(name: &str) -> Option<StorePreset> {
 }
 
 /// Make a screenshot compliant with a store preset: downscale if the longest side exceeds `max_side`
-/// (upscaling below `min_side` is refused — it would degrade quality; the caller should provide a
+/// (upscaling below `min_side` is refused because it would degrade quality; the caller should provide a
 /// bigger source). Returns the compliant PNG bytes plus its final (w, h).
 pub fn export_store(src: &[u8], p: &StorePreset) -> Result<(Vec<u8>, u32, u32), String> {
     let img = image::load_from_memory(src).map_err(|e| e.to_string())?;

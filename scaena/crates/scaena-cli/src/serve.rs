@@ -1,4 +1,4 @@
-//! `scaena serve` — a local web UI, browser-based like Figma but localhost-only (it needs local device
+//! `scaena serve`: a local web UI, browser-based like Figma but localhost-only (it needs local device
 //! access). Hand-rolled HTTP/1.1 over std TcpListener (no web-framework dep). Serves a small UI plus a
 //! JSON/image API over scaena-core. Zero network of its own; adb talks to a local emulator socket.
 

@@ -201,3 +201,13 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   positional path was silently ignored (wrote to `<pkg>.snapshot.tar` instead). It now takes a positional
   `<out>` like `restore` and the `snapshot` flow verb — one signature across CLI and DSL. `--out` kept.
 - `clippy -D warnings` clean on cli; core tests unchanged (green).
+
+## Cycle 29 — README documents the flow verbs + em-dash purge · gates 6/6
+- README kept true to the code: the Flows DSL block now lists `restore`/`snapshot`, and the
+  Session-replay section shows the one-flow form (`flows/session-replay.flow`) plus the detail that
+  `--full` captures the Firebase auth store, and the note that it is verified live on a device.
+- Purged every em-dash from the Scaena tree (11 occurrences: README, `flow.rs`, `serve.rs`, cli/mcp
+  `main.rs`, `render.rs`, `mock.rs`, two flow files; one was a user-facing CLI `println`) per the hard
+  global no-em-dash ban.
+- `clippy -D warnings` clean on all three crates; 4/4 flow tests green. Edits are comments/strings/docs
+  only, so the full 17-test suite is unchanged from cycle 27.

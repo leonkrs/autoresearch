@@ -1,5 +1,5 @@
 //! Declarative screen flows: launch an app, seed its private state, wait, capture. The differentiator
-//! that reaches screens behind a wall WITHOUT authenticating — by writing app-private files via
+//! that reaches screens behind a wall WITHOUT authenticating, by writing app-private files via
 //! `run-as` (Android). Zero AI, zero network. Android only for now (iOS uses container FS, later).
 
 use crate::{capture, Device, Platform};
@@ -50,7 +50,7 @@ pub fn snapshot(adb: &str, serial: &str, pkg: &str, out: &Path) -> io::Result<u6
 }
 
 /// Snapshot chosen private sub-dirs. Full state (`files`, `shared_prefs`, `databases`) captures the
-/// signed-in session too — the human signs in once, this records it, `restore` replays it forever.
+/// signed-in session too: the human signs in once, this records it, `restore` replays it forever.
 /// Non-existent dirs are skipped. This is the session-replay path for auth-gated screens.
 pub fn snapshot_dirs(adb: &str, serial: &str, pkg: &str, out: &Path, dirs: &[&str]) -> io::Result<u64> {
     let existing: Vec<&str> = dirs
@@ -119,7 +119,7 @@ pub enum Step {
 /// `launch <pkg> <activity>` · `stop [pkg]` · `seed <rel> <hostfile>` · `wait <ms>` · `capture <name>` ·
 /// `tap <x> <y>` · `key <keycode>` · `deeplink <url>` · `restore <pkg> <tar>` · `snapshot <pkg> <out>`.
 /// `restore`/`snapshot` are the session-replay verbs: restore a signed-in state captured once by a human,
-/// launch, capture the screen behind the wall — without ever authenticating.
+/// launch, capture the screen behind the wall, without ever authenticating.
 pub fn parse_flow(text: &str) -> Result<Vec<Step>, String> {
     let mut steps = Vec::new();
     for (i, raw) in text.lines().enumerate() {

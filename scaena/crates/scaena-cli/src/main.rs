@@ -119,7 +119,7 @@ fn cmd_flow(args: &[String]) {
     let base_dir = Path::new(file).parent().unwrap_or(Path::new("."));
     match run_flow(&adb_path(), &device, &steps, base_dir, &out_dir) {
         Ok(shots) => {
-            println!("flow ok — {} capture(s) on {}:", shots.len(), device.serial);
+            println!("flow ok: {} capture(s) on {}:", shots.len(), device.serial);
             for p in &shots {
                 // Optionally wrap each capture in a device frame, in place.
                 if frame {
