@@ -61,7 +61,8 @@ fn handle(mut stream: TcpStream) -> io::Result<()> {
         ("GET", "/api/run-flow") | ("POST", "/api/run-flow") => {
             let file = query(target, "file").unwrap_or_default();
             let device = query(target, "device");
-            match do_run_flow(&file, device.as_deref()) {
+            let framed = query(target, "frame").as_deref() == Some("1");
+            match do_run_flow(&file, device.as_deref(), framed) {
                 Ok(png) => respond(&mut stream, 200, "image/png", &png),
                 Err(e) => respond(&mut stream, 500, "text/plain", e.as_bytes()),
             }
@@ -164,7 +165,7 @@ fn valid_flow_name(file: &str) -> bool {
 
 /// Run a named flow from `flows_dir` on the chosen device and return its last capture as PNG bytes.
 /// `file` must pass `valid_flow_name` so the GUI cannot read outside `flows/`.
-fn do_run_flow(file: &str, serial: Option<&str>) -> Result<Vec<u8>, String> {
+fn do_run_flow(file: &str, serial: Option<&str>, framed: bool) -> Result<Vec<u8>, String> {
     if !valid_flow_name(file) {
         return Err("bad flow name".into());
     }
@@ -184,7 +185,12 @@ fn do_run_flow(file: &str, serial: Option<&str>) -> Result<Vec<u8>, String> {
     let out_dir = std::env::temp_dir().join("scaena-serve-flow");
     let shots = run_flow(&adb_path(), &device, &steps, &dir, &out_dir).map_err(|e| e.to_string())?;
     let last = shots.last().ok_or_else(|| "flow ran but produced no capture step".to_string())?;
-    std::fs::read(last).map_err(|e| e.to_string())
+    let bytes = std::fs::read(last).map_err(|e| e.to_string())?;
+    if framed {
+        frame_png(&bytes, 60, [14, 13, 16, 255], 44)
+    } else {
+        Ok(bytes)
+    }
 }
 
 fn do_capture(serial: Option<&str>, framed: bool) -> Result<Vec<u8>, String> {
@@ -249,7 +255,8 @@ async function runFlow(){
  const file=document.getElementById('flow').value;
  if(!file){document.getElementById('status').textContent='no flow selected';return;}
  document.getElementById('status').textContent='running '+file+'…';
- const url='/api/run-flow?file='+encodeURIComponent(file)+'&device='+encodeURIComponent(dev)+'&t='+Date.now();
+ const fr=document.getElementById('frame').checked?'1':'0';
+ const url='/api/run-flow?file='+encodeURIComponent(file)+'&device='+encodeURIComponent(dev)+'&frame='+fr+'&t='+Date.now();
  const r=await fetch(url,{method:'POST'});
  if(!r.ok){document.getElementById('status').textContent='error: '+await r.text();return;}
  const blob=await r.blob();const u=URL.createObjectURL(blob);

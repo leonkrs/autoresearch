@@ -230,3 +230,10 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   rejects empty, wrong-extension, `..`, path separators, and a nul splice; plus a `query` parse/miss test.
 - These are the first tests in the `scaena-cli` crate. Suite is now 20 (17 core + 3 cli).
 - `clippy -D warnings` clean, after fixing `items_after_test_module` by moving `mod tests` to end of file.
+
+## Cycle 32 — GUI run-flow honours the device-frame toggle · gates 6/6
+- The "Wrap in device frame" checkbox already fed `capture`; now it feeds `run-flow` too. `do_run_flow`
+  takes `framed`, `/api/run-flow` reads `frame=1`, and `runFlow()` passes the checkbox. One toggle, both
+  paths.
+- Live-verified: a framed Settings-app flow returns a 1200x2520 PNG (1080x2400 plus the 60px pad on each
+  side), versus the raw 1080x2400. `clippy -D warnings` clean; 3 cli tests green.
