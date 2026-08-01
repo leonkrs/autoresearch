@@ -150,10 +150,22 @@ fn flows_json() -> String {
     format!("[{}]", items.join(","))
 }
 
+/// A flow name from the GUI is safe iff it is a non-empty bare filename ending in `.flow`, with no path
+/// separators and no `..`. This keeps `/api/run-flow` from reading anything outside `flows/`. Pure so the
+/// guard has a regression test.
+fn valid_flow_name(file: &str) -> bool {
+    !file.is_empty()
+        && file.ends_with(".flow")
+        && !file.contains('/')
+        && !file.contains('\\')
+        && !file.contains("..")
+        && !file.contains('\0')
+}
+
 /// Run a named flow from `flows_dir` on the chosen device and return its last capture as PNG bytes.
-/// `file` must be a bare filename (no path separators, no `..`) so the GUI cannot read outside `flows/`.
+/// `file` must pass `valid_flow_name` so the GUI cannot read outside `flows/`.
 fn do_run_flow(file: &str, serial: Option<&str>) -> Result<Vec<u8>, String> {
-    if file.is_empty() || file.contains('/') || file.contains('\\') || file.contains("..") {
+    if !valid_flow_name(file) {
         return Err("bad flow name".into());
     }
     let dir = flows_dir();
@@ -257,3 +269,36 @@ async function cap(){
 }
 load();
 </script></body></html>"#;
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn valid_flow_name_accepts_bare_flow_files() {
+        assert!(valid_flow_name("session-replay.flow"));
+        assert!(valid_flow_name("spocken.flow"));
+        assert!(valid_flow_name("_tmp-verify.flow"));
+    }
+
+    #[test]
+    fn valid_flow_name_rejects_traversal_and_junk() {
+        assert!(!valid_flow_name(""));
+        assert!(!valid_flow_name("Cargo.toml"));
+        assert!(!valid_flow_name("../Cargo.toml"));
+        assert!(!valid_flow_name("../../etc/passwd.flow"));
+        assert!(!valid_flow_name("sub/dir.flow"));
+        assert!(!valid_flow_name("a\\b.flow"));
+        assert!(!valid_flow_name("evil.flow\0.png"));
+    }
+
+    #[test]
+    fn query_parses_and_misses() {
+        let t = "/api/run-flow?file=session-replay.flow&device=emulator-5554";
+        assert_eq!(query(t, "file").as_deref(), Some("session-replay.flow"));
+        assert_eq!(query(t, "device").as_deref(), Some("emulator-5554"));
+        assert_eq!(query(t, "missing"), None);
+        assert_eq!(query("/api/flows", "file"), None);
+    }
+}

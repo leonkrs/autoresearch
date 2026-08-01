@@ -223,3 +223,10 @@ Human edits `program.md`. Agent edits `scaena/`. One thin, verified slice per cy
   Flow dropdown and Run flow button.
 - Session-replay is now reachable from all three consumers: CLI, MCP, and the browser GUI.
   `clippy -D warnings` clean.
+
+## Cycle 31 — harden and test the GUI flow-name guard · gates 6/6
+- Pulled the `/api/run-flow` traversal check out of `do_run_flow` into a pure `valid_flow_name`, which
+  now also requires a `.flow` extension, and gave it 3 unit tests: it accepts bare `.flow` names and
+  rejects empty, wrong-extension, `..`, path separators, and a nul splice; plus a `query` parse/miss test.
+- These are the first tests in the `scaena-cli` crate. Suite is now 20 (17 core + 3 cli).
+- `clippy -D warnings` clean, after fixing `items_after_test_module` by moving `mod tests` to end of file.
